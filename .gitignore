@@ -38,8 +38,8 @@ Thumbs.db
 *.log
 
 # Composer (if using)
-vendor/
-composer.lock
+# vendor/
+# composer.lock
 
 # Node Modules (if using)
 node_modules/

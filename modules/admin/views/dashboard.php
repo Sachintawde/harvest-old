@@ -55,9 +55,19 @@
                     <div class="wb-traffic-inner notika-shadow sm-res-mg-t-30 tb-res-mg-t-30 dk-res-mg-t-30">
                         <div class="website-traffic-ctn">
                             <?php
-                                // Read the current value of our counter file
+                                // Path to the counter file
                                 $counter_name = APPPATH."logs/counter.txt";
-                                $f = fopen($counter_name,"r");
+
+                                // Check if the file exists
+                                if (!file_exists($counter_name)) {
+                                    // Create the file and initialize the counter to 0
+                                    $f = fopen($counter_name, "w");
+                                    fwrite($f, "0");
+                                    fclose($f);
+                                }
+
+                                // Read the current value of the counter file
+                                $f = fopen($counter_name, "r");
                                 $counterVal = fread($f, filesize($counter_name));
                                 fclose($f);
                             ?>
