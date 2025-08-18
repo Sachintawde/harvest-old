@@ -1,0 +1,65 @@
+    .main-menu-area , .footer-copyright-area{
+        display:none;        
+    }
+    .top-title{
+        display:block;
+    }
+    input[type="checkbox"]{
+        opacity:1 !important;
+    }
+    .fm-checkbox label{
+    font-size:12px;
+    }
+    .m_element{
+        background:#FDF7F7;
+        text-align:center;
+        border:1px solid #ff214f;
+        border-radius:5%;
+    }
+    .m_m{
+        background: #ff214f;
+        color: #fff;
+        font-size:14px;
+        padding: 0px 5px;
+
+    }
+    .y_m{
+        font-size:8px;
+    }
+    .m_amt{
+        padding: 0px 30px !important;
+    }
+    .m_dollar{
+        position:absolute;
+        top:25%;
+    }
+
+    #btnSaveSign {
+        color: #fff;
+        background: #f99a0b;
+        padding: 5px;
+        border: none;
+        border-radius: 5px;
+        font-size: 20px;
+        margin-top: 10px;
+    }
+    #signArea{
+        width:304px;
+        margin: 50px auto;
+    }
+    .sign-container {
+        width: 60%;
+        margin: auto;
+    }
+    .sign-preview {
+        width: 150px;
+        height: 50px;
+        border: solid 1px #CFCFCF;
+        margin: 10px 5px;
+    }
+    .tag-ingo {
+        font-family: cursive;
+        font-size: 12px;
+        text-align: left;
+        font-style: oblique;
+    }

@@ -1,0 +1,9 @@
+[06-Feb-2024 10:47:29 Asia/Calcutta] Failed to send email. Error: 
+[30-Jul-2025 06:30:30 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/j5bsswbwd9um/public_html/system/core/CodeIgniter.php' (include_path='.:/opt/alt/php81/usr/share/pear:/opt/alt/php81/usr/share/php:/usr/share/pear:/usr/share/php') in /home/j5bsswbwd9um/public_html/index.php:327
+Stack trace:
+#0 {main}
+  thrown in /home/j5bsswbwd9um/public_html/index.php on line 327
+[30-Jul-2025 06:30:30 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/j5bsswbwd9um/public_html/system/core/CodeIgniter.php' (include_path='.:/opt/alt/php81/usr/share/pear:/opt/alt/php81/usr/share/php:/usr/share/pear:/usr/share/php') in /home/j5bsswbwd9um/public_html/index.php:327
+Stack trace:
+#0 {main}
+  thrown in /home/j5bsswbwd9um/public_html/index.php on line 327
