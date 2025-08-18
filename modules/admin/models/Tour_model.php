@@ -14,21 +14,21 @@ class Tour_model extends CI_Model{
 
 	
 
-	// public function get_all_tour()
-
-	// {		
-
-	// 	$data = $this->db->get('tour');
-
-	// 	$t = $data->result();		
-
-	// 	return $t;
-
-	// }
 	public function get_all_tour()
-    {        
-        return $this->db->get('tour')->result_array();
-    }
+
+	{		
+
+		$data = $this->db->get('tour');
+
+		$t = $data->result();		
+
+		return $t;
+
+	}
+	// public function get_all_tour()
+    // {        
+    //     return $this->db->get('tour')->result_array();
+    // }
 
 
 
