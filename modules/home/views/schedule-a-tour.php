@@ -332,19 +332,8 @@ if ($timestamp && ($current_time - $timestamp) > $timeout) {
                 <textarea class="form-control no-links" name="t_other_notes"></textarea>
             </div>
 
+            <!-- Signature section removed -->
             <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">Signature of Parents/Guardian:<spna class="imp">*</spna></label>
-                    <canvas id="signature-pad" class="signature-pad" width=400 height=200 style="border:1px solid #000;"></canvas>
-                    <input type="hidden" name="t_signature" id="signature-input" required>
-                    <div>
-                        <button type="button" class="btn btn-danger" id="clear-signature">Clear</button>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Date:<spna class="imp">*</spna></label>
-                    <input type="text" class="form-control no-links" name="t_signature_date" id="t_signature_date" placeholder="Select Date" value="<?= isset($post_data['t_signature_date']) ? $post_data['t_signature_date'] : '' ?>" required>
-                </div>
                 <div class="form-group">
                     <div class="g-recaptcha" data-sitekey="6Le72CQqAAAAAHW4TQ6RZSTX-Jmni63nSUOWqcpk"></div>
                 </div>
@@ -447,29 +436,12 @@ if ($timestamp && ($current_time - $timestamp) > $timeout) {
     });
 </script>
 <script>
-    $("#t_dob_1,#t_dob_2,#t_signature_date").datepicker({
+    $("#t_dob_1,#t_dob_2").datepicker({
         format: 'mm/dd/yyyy',
         autoclose: true,
         weekStart: 0,
         calendarWeeks: true,
         todayHighlight: true
-    });
-</script>
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
-<script>
-    var canvas = document.getElementById('signature-pad');
-    var signaturePad = new SignaturePad(canvas);
-
-    // Clear signature
-    document.getElementById('clear-signature').addEventListener('click', function() {
-        signaturePad.clear();
-    });
-
-    // Convert signature to base64 before submitting the form
-    document.querySelector('form').addEventListener('submit', function(event) {
-        if (!signaturePad.isEmpty()) {
-            document.getElementById('signature-input').value = signaturePad.toDataURL();
-        }
     });
 </script>
 <script>
