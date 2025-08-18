@@ -348,12 +348,12 @@ if ($timestamp && ($current_time - $timestamp) > $timeout) {
             </div>
             <p id="agegroup-error" style="color: red; display: none;">Please select at least one Age group.</p>
 
-            <div class="mb-3 mt-3">
-                <label class="form-label">Other Notes:</label>
-                <textarea class="form-control no-links" name="t_other_notes"></textarea>
-            </div>
 
-            <div class="row">
+            <div class="row mb-3 mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">Other Notes:</label>
+                    <textarea class="form-control no-links" name="t_other_notes"></textarea>
+                </div>
                 <div class="col-md-6">
                     <label class="form-label">Date:<span class="imp">*</span></label>
                     <input type="text" class="form-control no-links" name="t_signature_date" id="t_signature_date" placeholder="Select Date" value="<?= isset($post_data['t_signature_date']) ? $post_data['t_signature_date'] : '' ?>" required>
