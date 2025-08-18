@@ -102,16 +102,6 @@
 
             <p><strong>Programs of Interest:</strong> <?php echo isset($t_program) ? htmlspecialchars($t_program) : 'N/A'; ?></p>
             <p><strong>Our Program (Age Group):</strong> <?php echo isset($t_agegroups) ? htmlspecialchars($t_agegroups) : 'N/A'; ?></p>
-            <!-- <p><strong>t_Signature:</strong></p>
-            <img src="<?= isset($t_signature) && $t_signature != 'N/A' ? $t_signature : ''; ?>" alt="t_Signature" style="max-width:300px; border:1px solid #ddd; padding:5px;"> -->
-            <p><strong>Signature:</strong></p>
-            <p>
-                <?php if (isset($t_signature) && $t_signature != 'N/A'): ?>
-                    <img src="<?= $t_signature; ?>" alt="Signature" style="max-width:300px; border:1px solid #ddd; padding:5px;">
-                <?php else: ?>
-                    No signature provided.
-                <?php endif; ?>
-            </p>
             <p><strong>Signature Date:</strong> <?php echo isset($t_signature_date) ? htmlspecialchars($t_signature_date) : 'N/A'; ?></p>
         </div>
 

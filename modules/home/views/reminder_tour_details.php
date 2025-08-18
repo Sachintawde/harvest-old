@@ -154,16 +154,6 @@
                 <td><?= $tour['t_agegroups'] ?></td>
             </tr>
             <tr>
-                <th>Signature</th>
-                <td>
-                    <?php if (!empty($tour['t_signature']) && $tour['t_signature'] !== 'N/A'): ?>
-                        <img src="<?= $tour['t_signature'] ?>" alt="Signature" width="200">
-                    <?php else: ?>
-                        N/A
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <tr>
                 <th>Signature Date</th>
                 <td><?= $tour['t_signature_date'] ?></td>
             </tr>
