@@ -353,15 +353,27 @@ if ($timestamp && ($current_time - $timestamp) > $timeout) {
                 <textarea class="form-control no-links" name="t_other_notes"></textarea>
             </div>
 
-            <!-- Signature section removed -->
             <div class="row">
-                <div class="form-group">
-                    <div class="g-recaptcha" data-sitekey="6Le72CQqAAAAAHW4TQ6RZSTX-Jmni63nSUOWqcpk"></div>
+                <div class="col-md-6">
+                    <label class="form-label">Date:<span class="imp">*</span></label>
+                    <input type="text" class="form-control no-links" name="t_signature_date" id="t_signature_date" placeholder="Select Date" value="<?= isset($post_data['t_signature_date']) ? $post_data['t_signature_date'] : '' ?>" required>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary mt-3">Submit</button>
-            <p id="error-message" style="color: red; display: none;">Links are not allowed!</p>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="g-recaptcha" data-sitekey="6Le72CQqAAAAAHW4TQ6RZSTX-Jmni63nSUOWqcpk"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary mt-3">Submit</button>
+                    <p id="error-message" style="color: red; display: none;">Links are not allowed!</p>
+                </div>
+            </div>
         </form>
     </div>
 </section>
@@ -448,7 +460,7 @@ if ($timestamp && ($current_time - $timestamp) > $timeout) {
     });
 </script>
 <script>
-    $("#t_dob_1,#t_dob_2").datepicker({
+    $("#t_dob_1,#t_dob_2,#t_signature_date").datepicker({
         format: 'mm/dd/yyyy',
         autoclose: true,
         weekStart: 0,
