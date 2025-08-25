@@ -154,7 +154,7 @@
                 <td><?= $tour['t_agegroups'] ?></td>
             </tr>
             <tr>
-                <th>Signature Date</th>
+                <th>Date</th>
                 <td><?= $tour['t_signature_date'] ?></td>
             </tr>
             <!-- Child 1 Details -->

@@ -102,7 +102,7 @@
 
             <p><strong>Programs of Interest:</strong> <?php echo isset($t_program) ? htmlspecialchars($t_program) : 'N/A'; ?></p>
             <p><strong>Our Program (Age Group):</strong> <?php echo isset($t_agegroups) ? htmlspecialchars($t_agegroups) : 'N/A'; ?></p>
-            <p><strong>Signature Date:</strong> <?php echo isset($t_signature_date) ? htmlspecialchars($t_signature_date) : 'N/A'; ?></p>
+            <p><strong>Date:</strong> <?php echo isset($t_signature_date) ? htmlspecialchars($t_signature_date) : 'N/A'; ?></p>
         </div>
 
         <div class="footer">

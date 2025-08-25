@@ -90,7 +90,7 @@
             <tr><th>Other Notes</th><td><?= htmlspecialchars($tour->t_other_notes) ?></td></tr>
             <tr><th>Programs Interested</th><td><?= htmlspecialchars($tour->t_program) ?></td></tr>
             <tr><th>Our Program (Age Group)</th><td><?= htmlspecialchars($tour->t_agegroups) ?></td></tr>
-            <tr><th>Signature Date</th><td><?= htmlspecialchars($tour->t_signature_date) ?></td></tr>
+            <tr><th>Date</th><td><?= htmlspecialchars($tour->t_signature_date) ?></td></tr>
             <!-- Child 1 Details -->
             <tr><th>Child 1 First Name</th><td><?= htmlspecialchars($tour->t_child_name_1) ?></td></tr>
             <tr><th>Child 1 Last Name</th><td><?= htmlspecialchars($tour->t_child_lname_1) ?></td></tr>
