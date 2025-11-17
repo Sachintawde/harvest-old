@@ -48,24 +48,17 @@
 <!-- Start Class Details -->
 <!-- Start Welcame Area -->
 <?php
-$timeout = 60; // 1 minute = 60 seconds
-$timestamp = $this->session->flashdata('timestamp');
-$current_time = time();
+// Display flash messages
+if ($this->session->flashdata('success')) {
+    echo '<div class="container mt-3"><div class="alert alert-success alert-dismissible fade show" role="alert">' 
+        . $this->session->flashdata('success') 
+        . '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div></div>';
+}
 
-if ($timestamp && ($current_time - $timestamp) > $timeout) {
-    // Flash data has expired, so unset it
-    $this->session->unset_userdata('success');
-    $this->session->unset_userdata('error');
-    $this->session->unset_userdata('timestamp');
-} else {
-    // Show flash data if it's not expired
-    if ($this->session->flashdata('success')) {
-        echo '<div class="alert alert-success">' . $this->session->flashdata('success') . '</div>';
-    }
-
-    if ($this->session->flashdata('error')) {
-        echo '<div class="alert alert-danger">' . $this->session->flashdata('error') . '</div>';
-    }
+if ($this->session->flashdata('error')) {
+    echo '<div class="container mt-3"><div class="alert alert-danger alert-dismissible fade show" role="alert">' 
+        . $this->session->flashdata('error') 
+        . '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div></div>';
 }
 ?>
 

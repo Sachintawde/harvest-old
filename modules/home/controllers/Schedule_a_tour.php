@@ -132,7 +132,6 @@ class Schedule_a_tour extends HOME_Controller
         if ($valid) {
             $tour_id = $this->db->insert_id();
             $this->load->library('email'); // Get the last inserted ID
-            $this->session->set_flashdata('timestamp', time());
     
             $parent_email = !empty($post_data['t_mother_email']) ? $post_data['t_mother_email'] : (!empty($post_data['t_father_email']) ? $post_data['t_father_email'] : $post_data['t_mail']);
     
@@ -154,24 +153,48 @@ class Schedule_a_tour extends HOME_Controller
             $mail1 = ['adrs' => 'info@harvestgreenmontessori.com', 'sub' => 'Schedule A Tour Form Submission', 'body' => $email_template1];
             $mail2 = ['adrs' => $parent_email, 'sub' => 'Thank you for scheduling a tour at Harvest Green Montessori', 'body' => $email_template2];
     
-            if ($this->send_mail($mail1) && $this->send_mail($mail2)) {
+            $mail1_sent = $this->send_mail($mail1);
+            $mail2_sent = $this->send_mail($mail2);
+            
+            // Get the preferred communication method
+            $comm_method = isset($post_data['t_communication_method']) ? strtolower($post_data['t_communication_method']) : 'phone';
+            $contact_via = ($comm_method == 'email') ? 'via email' : 'via phone';
+            
+            if ($mail1_sent || $mail2_sent) {
+                // At least one email sent successfully
                 $ics_filename = 'tour_event_' . time() . '.ics';
                 $ics_content = $this->generate_ics_content($post_data);
+                
+                // Create directory if it doesn't exist
+                if (!is_dir(FCPATH . 'uploads/ics')) {
+                    mkdir(FCPATH . 'uploads/ics', 0777, true);
+                }
+                
                 file_put_contents(FCPATH . 'uploads/ics/' . $ics_filename, $ics_content);
 
                 // Attach ICS file to admin email
+                $this->email->clear();
                 $this->email->from('info@harvestgreenmontessori.com', 'Harvest Green Montessori');
                 $this->email->to('info@harvestgreenmontessori.com');
                 $this->email->subject('Tour Event Scheduled');
                 $this->email->message('Please find the attached ICS file for the scheduled tour event.');
                 $this->email->attach(FCPATH . 'uploads/ics/' . $ics_filename);
-
-                // Send the email
-                if ($this->email->send()) {
-                    $this->session->set_flashdata('success', 'Tour scheduled successfully.');
+                $this->email->send();
+                
+                // Set success message
+                if ($mail1_sent && $mail2_sent) {
+                    $this->session->set_flashdata('success', 'Tour scheduled successfully! Confirmation emails have been sent.');
+                } else if ($mail1_sent) {
+                    $this->session->set_flashdata('success', 'Tour scheduled successfully! We have received your request and will contact you ' . $contact_via . '.');
                 } else {
-                    $this->session->set_flashdata('error', 'Error sending ICS file.');
+                    $this->session->set_flashdata('success', 'Tour scheduled successfully! A confirmation email has been sent to you.');
                 }
+                $this->session->set_flashdata('timestamp', time());
+            } else {
+                // Both emails failed but tour is still saved
+                $this->session->set_flashdata('success', 'Tour scheduled successfully! We will contact you soon ' . $contact_via . '.');
+                $this->session->set_flashdata('timestamp', time());
+                log_message('error', 'Schedule Tour: Both emails failed to send for tour_id: ' . $tour_id);
             }
     
             redirect($_SERVER["HTTP_REFERER"]);

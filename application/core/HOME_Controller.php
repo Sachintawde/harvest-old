@@ -53,13 +53,18 @@ class HOME_Controller extends MY_Controller {
         $this->load->config('email');
         $this->load->library('email');
         
-        $from_mail   = 'noreply@harvestgreenmontessori.com';
+        $from_mail   = 'info@harvestgreenmontessori.com';
         $from_name    =  "Harvest Green Montessori School";
                 
         $this->email->from($from_mail, $from_name);
         $this->email->to($mail['adrs']);
-        $list = array('info@harvestgreenmontessori.com');
-        $this->email->cc($list);
+        
+        // Only CC if sending to someone other than info@
+        if($mail['adrs'] != 'info@harvestgreenmontessori.com'){
+            $list = array('info@harvestgreenmontessori.com');
+            $this->email->cc($list);
+        }
+        
         $this->email->subject($mail['sub']);
         $this->email->message($mail['body']);
         $this->email->set_mailtype('html');
@@ -67,6 +72,8 @@ class HOME_Controller extends MY_Controller {
         if($this->email->send()){
             return true;
         }else{
+            // Log the error for debugging
+            log_message('error', 'Email send failed: ' . $this->email->print_debugger());
             return false;
         }
     }
