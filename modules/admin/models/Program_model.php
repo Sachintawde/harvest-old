@@ -40,7 +40,7 @@ class Program_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$program_path = base_url("assets/uploads/".$file_data['file_name']);
+			$program_path = "assets/uploads/".$file_data['file_name'];
 		}
 
 		if ( ! $this->upload->do_upload('program_path_two'))
@@ -51,7 +51,7 @@ class Program_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$program_path_two = base_url("assets/uploads/".$file_data['file_name']);
+			$program_path_two = "assets/uploads/".$file_data['file_name'];
 		}
 				    
 			if(isset($row['ytb_link'])) {
@@ -185,6 +185,8 @@ class Program_model extends CI_Model{
 
 		$this->load->library('upload', $config);
 
+		$old_record = $this->db->get_where('program', array('program_id' => $row['program_id_1']))->row_array();
+
 		if ( ! $this->upload->do_upload('edit_program_path'))
 		{
 			$valid['status'] = "warning";
@@ -193,7 +195,7 @@ class Program_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$program_path = base_url("assets/uploads/".$file_data['file_name']);
+			$program_path = "assets/uploads/".$file_data['file_name'];
 		}
 
 		if ( ! $this->upload->do_upload('edit_program_path_two'))
@@ -204,7 +206,7 @@ class Program_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$program_path_two = base_url("assets/uploads/".$file_data['file_name']);
+			$program_path_two = "assets/uploads/".$file_data['file_name'];
 		}
 			$data = array('program_path' => $program_path,'program_path_two' => $program_path_two);
 
@@ -214,6 +216,18 @@ class Program_model extends CI_Model{
 			if ($query) {
 				$valid['status'] = "success";
 				$valid['messages'] = "Image updated successfully";
+				if (!empty($old_record['program_path']) && strpos($old_record['program_path'], 'assets/uploads/') !== false) {
+					$old_file = './assets/uploads/' . basename($old_record['program_path']);
+					if (file_exists($old_file)) {
+						@unlink($old_file);
+					}
+				}
+				if (!empty($old_record['program_path_two']) && strpos($old_record['program_path_two'], 'assets/uploads/') !== false) {
+					$old_file_two = './assets/uploads/' . basename($old_record['program_path_two']);
+					if (file_exists($old_file_two)) {
+						@unlink($old_file_two);
+					}
+				}
 			} else {
 				$valid['status'] = "warning";
 				$valid['messages'] = "Can't update this image";

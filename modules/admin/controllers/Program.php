@@ -19,7 +19,7 @@ class Program extends ADMIN_Controller {
  
         foreach($program as $row) {
             $program_id = $row->program_id;
-            $imageUrl = $row->program_path;
+            $imageUrl = img_url($row->program_path);
         
             $program = "<img class='img-round' title='".$imageUrl."' src='".$imageUrl."' style='height:30px; width:50px;'  />";
         
@@ -49,6 +49,12 @@ class Program extends ADMIN_Controller {
         $data['program_id'] = $this->input->post("program_id");
         $this->load->model("program_model");
         $d = $this->program_model->get_single_program($data);
+        if (isset($d['program_path'])) {
+            $d['program_path'] = img_url($d['program_path']);
+        }
+        if (isset($d['program_path_two']) && !empty($d['program_path_two'])) {
+            $d['program_path_two'] = img_url($d['program_path_two']);
+        }
         echo json_encode($d);
     }
     

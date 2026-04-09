@@ -31,7 +31,7 @@
 						<div class="blog__2 radius_two">
 							<div class="blog__thumb">
 								<a href="'.base_url().'blog/details/'.strtolower(str_replace(" ","_",$row->blog_name)).'">
-									<img src="'.$row->blog_path.'" alt="blog images">
+									<img src="'.img_url($row->blog_path).'" alt="blog images">
 								</a>
 							</div>
 							<div class="blog__inner">

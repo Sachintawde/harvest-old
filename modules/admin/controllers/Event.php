@@ -19,7 +19,7 @@ class Event extends ADMIN_Controller {
  
         foreach($event as $row) {
             $event_id = $row->event_id;
-            $imageUrl = $row->event_path;
+            $imageUrl = img_url($row->event_path);
         
             $event = "<img class='img-round' title='".$imageUrl."' src='".$imageUrl."' style='height:30px; width:50px;'  />";
         
@@ -51,6 +51,9 @@ class Event extends ADMIN_Controller {
         $data['event_id'] = $this->input->post("event_id");
         $this->load->model("event_model");
         $d = $this->event_model->get_single_event($data);
+        if (isset($d['event_path'])) {
+            $d['event_path'] = img_url($d['event_path']);
+        }
         echo json_encode($d);
     }
     

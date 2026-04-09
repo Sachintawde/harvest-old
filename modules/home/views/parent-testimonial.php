@@ -35,7 +35,7 @@
 								// Check if video path is available
 								$videoIcon = '';
 								if (!empty($row->t_path_two)) {
-									$videoIcon = '<a class="video parent_vid_icon" href="'.$row->t_path_two.'" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-play"></i></a>';
+									$videoIcon = '<a class="video parent_vid_icon" href="'.img_url($row->t_path_two).'" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-play"></i></a>';
 								}
 
 								echo '
@@ -69,7 +69,7 @@
 									<div class="modal-dialog modal-lg">
 										<div class="modal-content">
 											<video width="100%" controls>
-												<source src="'.$row->t_path_two.'">
+										<source src="'.img_url($row->t_path_two).'">
 											</video>
 										</div>
 									</div>

@@ -41,7 +41,7 @@ class Add_more extends ADMIN_Controller {
 
         foreach($img as $row) {
             $gp_id = $row->gp_id;
-            $imageUrl = $row->gp_path;
+            $imageUrl = img_url($row->gp_path);
         
             $img = "<img class='img-round' title='".$imageUrl."' src='".$imageUrl."' style='height:30px; width:50px;'  />";
         

@@ -19,7 +19,7 @@ class Curriculum extends ADMIN_Controller {
  
         foreach($c as $row) {
             $c_id = $row->c_id;
-            $imageUrl = $row->c_path;
+            $imageUrl = img_url($row->c_path);
         
             $c = "<img class='img-round' title='".$imageUrl."' src='".$imageUrl."' style='height:30px; width:50px;'  />";
         
@@ -50,6 +50,9 @@ class Curriculum extends ADMIN_Controller {
         $data['c_id'] = $this->input->post("c_id");
         $this->load->model("curriculum_model");
         $d = $this->curriculum_model->get_single_curriculum($data);
+        if (isset($d['c_path'])) {
+            $d['c_path'] = img_url($d['c_path']);
+        }
         echo json_encode($d);
     }
     

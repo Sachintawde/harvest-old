@@ -1,14 +1,13 @@
-
-var manageImageTable;
+﻿var manageImageTable;
 
 $(document).ready(function() {
-	// top     $("#min").datepicker({
+    $("#min").datepicker({
         format: 'yyyy-mm-dd',
         autoclose: true,
         changeMonth: true,
         changeYear: true
     }).on('changeDate', function () {
-        manageGalleryTable.draw();
+        manageImageTable.draw();
     });
     $("#max").datepicker({
         format: 'yyyy-mm-dd',
@@ -16,8 +15,9 @@ $(document).ready(function() {
         changeMonth: true,
         changeYear: true
     }).on('changeDate', function () {
-        manageGalleryTable.draw();
-    });('.navGallery').addClass('active');
+        manageImageTable.draw();
+    });
+    $('.navGallery').addClass('active');
 	$('#ytb_space').hide();
 	$('#ext_space').hide();
 	$('#edit_ytb_space').hide();

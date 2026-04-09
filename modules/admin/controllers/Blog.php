@@ -19,7 +19,7 @@ class Blog extends ADMIN_Controller {
  
         foreach($blog as $row) {
             $blog_id = $row->blog_id;
-            $imageUrl = $row->blog_path;
+            $imageUrl = img_url($row->blog_path);
         
             $blog = "<img class='img-round' title='".$imageUrl."' src='".$imageUrl."' style='height:30px; width:50px;'  />";
         
@@ -50,6 +50,9 @@ class Blog extends ADMIN_Controller {
         $data['blog_id'] = $this->input->post("blog_id");
         $this->load->model("blog_model");
         $d = $this->blog_model->get_single_blog($data);
+        if (isset($d['blog_path'])) {
+            $d['blog_path'] = img_url($d['blog_path']);
+        }
         echo json_encode($d);
     }
     

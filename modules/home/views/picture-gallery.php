@@ -32,13 +32,13 @@
 				<div class="gallery p-1">
 					<div class="gallery__thumb">
 						<a href="#">
-							<img src="'.$row->img_path.'" alt="gallery images" class="img-thumbnail">
+							<img src="'.img_url($row->img_path).'" alt="gallery images" class="img-thumbnail">
 						</a>
 					</div>
 					<div class="gallery__hover__inner">
 						<div class="gallery__hover__action">
 							<ul class="gallery__zoom">
-								<li><a href="'.$row->img_path.'" data-lightbox="grportimg" data-title="'.$row->img_desc.'"><i class="fa fa-crosshairs"></i></a></li>
+								<li><a href="'.img_url($row->img_path).'" data-lightbox="grportimg" data-title="'.$row->img_desc.'"><i class="fa fa-crosshairs"></i></a></li>
 							</ul>
 							<h4 class="gallery__title"><a href="#">'.$row->img_title.'</a></h4>
 						</div>

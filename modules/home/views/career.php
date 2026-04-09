@@ -57,10 +57,17 @@
         </section>
         <!-- End Class Details -->
 		<!-- animation section  -->
+		<style>
+			.marquee-wrapper { overflow: hidden; white-space: nowrap; padding-bottom: 10px; }
+			.marquee-track { display: inline-block; animation: marquee-scroll 15s linear infinite; }
+			@keyframes marquee-scroll { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+		</style>
 		<section class="home-content" style="background-color: #ffc000;padding-top: 30px">
-			<marquee behavior="" direction="" >
-			<img src="<?= base_url(); ?>assets/home/images/others/bus.png" >
-		</marquee>
+			<div class="marquee-wrapper">
+				<div class="marquee-track">
+					<img src="<?= base_url(); ?>assets/home/images/others/bus.png">
+				</div>
+			</div>
 		</section>
 		<!-- ---------End Home gallery------- -->
 <?php $this->load->view('common/footer'); ?>

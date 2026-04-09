@@ -19,7 +19,7 @@ class Gallery extends ADMIN_Controller {
 
         foreach($img as $row) {
             $img_id = $row->img_id;
-            $imageUrl = $row->img_path;
+            $imageUrl = img_url($row->img_path);
         
             $img = "<img class='img-round' title='".$imageUrl."' src='".$imageUrl."' style='height:30px; width:50px;'  />";
         
@@ -51,6 +51,9 @@ class Gallery extends ADMIN_Controller {
         $data['img_id'] = $this->input->post("img_id");
         $this->load->model("gallery_model");
         $d = $this->gallery_model->get_single_img($data);
+        if (isset($d['img_path'])) {
+            $d['img_path'] = img_url($d['img_path']);
+        }
         echo json_encode($d);
     }
     

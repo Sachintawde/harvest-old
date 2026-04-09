@@ -49,9 +49,9 @@
         <input type="hidden" name="phone" value="<?= htmlspecialchars($phone) ?>">
         <h2><?= htmlspecialchars($title) ?></h2>
         <p>Greetings <strong><?= htmlspecialchars($name) ?></strong>,</p>
-        <p>Thank you for your interest in <?= htmlspecialchars($address) ?>! I am looking forward to meeting you during your visit and providing you with a tour of our facility on <a href="https://harvestgreenmontessori.com/Schedule_a_tour/tourdetails/<?= urlencode($tour_id) ?>" target="_blank">View Your Booked Tour</a>.</p>
+        <p>Thank you for your interest in <?= htmlspecialchars($address) ?>! I am looking forward to meeting you during your visit and providing you with a tour of our facility on <a href="<?= base_url('Schedule_a_tour/tourdetails/') . urlencode($tour_id) ?>" target="_blank">View Your Booked Tour</a>.</p>
         <p>If you need to change the date or time of your tour, please contact us today or visit our website to make any changes.</p>
-        <p>You may click on our website link to learn more: <a href="https://harvestgreenmontessori.com/">www.harvestgreenmontessori.com</a>. Please do not hesitate to call if you have any questions! We are conveniently located next door to James Neil Elementary school.</p>
+        <p>You may click on our website link to learn more: <a href="<?= base_url() ?>">www.harvestgreenmontessori.com</a>. Please do not hesitate to call if you have any questions! We are conveniently located next door to James Neil Elementary school.</p>
         <p>We can't wait to show you what a difference our Montessori school will be for your child!</p>
         <p><strong>Warm regards,</strong></p>
         <p>
@@ -60,7 +60,7 @@
             4100 Harvest Corner Drive<br>
             Richmond, Texas 77406<br>
             Phone: <a href="tel:2818197529">281-819-7529</a><br>
-            <a href="https://harvestgreenmontessori.com/">www.harvestgreenmontessori.com</a>
+            <a href="<?= base_url() ?>">www.harvestgreenmontessori.com</a>
         </p>
         <div class="footer">
             <p>"Free the child's potential, and you will transform him into the world." - Maria Montessori</p>

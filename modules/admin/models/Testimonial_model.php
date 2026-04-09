@@ -30,7 +30,7 @@ class Testimonial_model extends CI_Model{
 		
 		$defaultImagePath = ($row['t_gender'] == 'Male') ? 'man.png' : '25.png';
 		
-		$t_path= base_url("assets/home/images/others/{$defaultImagePath}");
+		$t_path= "assets/home/images/others/{$defaultImagePath}";
 		$t_path_two= "";
 
 
@@ -42,7 +42,7 @@ class Testimonial_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$t_path = base_url("assets/uploads/".$file_data['file_name']);
+			$t_path = "assets/uploads/".$file_data['file_name'];
 		}
 
 		if ( ! $this->upload->do_upload('t_path_two'))
@@ -53,7 +53,7 @@ class Testimonial_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$t_path_two = base_url("assets/uploads/".$file_data['file_name']);
+			$t_path_two = "assets/uploads/".$file_data['file_name'];
 		}
 			$data = array(
 				't_path' => $t_path,
@@ -120,12 +120,14 @@ class Testimonial_model extends CI_Model{
 		$config['allowed_types'] = 'gif|jpg|png|jpeg|mp4';
 	
 		$this->load->library('upload', $config);
+
+		$old_record = $this->db->get_where('testimonial', array('t_id' => $row['t_id_1']))->row_array();
 	
 		// Upload the first image (edit_t_path)
 		if ( ! $this->upload->do_upload('edit_t_path'))
 		{
 			// Set default path for the first image
-			$t_path = base_url("assets/uploads/25.png");
+			$t_path = "assets/uploads/25.png";
 			
 			$valid['status'] = "warning";
 			$valid['messages'] = "Error : ".$this->upload->display_errors();
@@ -133,7 +135,7 @@ class Testimonial_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$t_path = base_url("assets/uploads/".$file_data['file_name']);
+			$t_path = "assets/uploads/".$file_data['file_name'];
 		}
 	
 		// Upload the second image (edit_t_path_two)
@@ -148,7 +150,7 @@ class Testimonial_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$t_path_two = base_url("assets/uploads/".$file_data['file_name']);
+			$t_path_two = "assets/uploads/".$file_data['file_name'];
 		}
 	
 		// Prepare data array for update
@@ -161,6 +163,18 @@ class Testimonial_model extends CI_Model{
 		if ($query) {
 			$valid['status'] = "success";
 			$valid['messages'] = "Image updated successfully";
+			if (!empty($old_record['t_path']) && strpos($old_record['t_path'], 'assets/uploads/') !== false) {
+				$old_file = './assets/uploads/' . basename($old_record['t_path']);
+				if (file_exists($old_file)) {
+					@unlink($old_file);
+				}
+			}
+			if (!empty($old_record['t_path_two']) && strpos($old_record['t_path_two'], 'assets/uploads/') !== false) {
+				$old_file_two = './assets/uploads/' . basename($old_record['t_path_two']);
+				if (file_exists($old_file_two)) {
+					@unlink($old_file_two);
+				}
+			}
 		} else {
 			$valid['status'] = "warning";
 			$valid['messages'] = "Can't update this image";

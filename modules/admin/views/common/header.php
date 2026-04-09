@@ -258,6 +258,7 @@ $this->recent_msg=[];
                                   <li class="navTour"><a href="<?= base_url(); ?>/admin/tour">Schedule A Tour</a></li>
                                   <li class="navTestimonial"><a href="<?= base_url(); ?>/admin/testimonial">Testimonial</a></li>
                                   <li class="navTour"><a href="<?= base_url(); ?>/admin/tour/calendar">Tour Calendar</a></li>
+                                  <li class="navFaq"><a href="<?= base_url(); ?>/admin/faq">FAQ</a></li>
                                   <li class="navSetting">
                                     <a data-toggle="collapse" data-target="#Pagemob" href="#"><?= $this->session->userdata("u_name") ?></a>
                                     <ul id="Pagemob" class="collapse dropdown-header-top">
@@ -293,6 +294,7 @@ $this->recent_msg=[];
                 <li class="navTour"><a href="<?= base_url(); ?>/admin/tour"><i class="notika-icon notika-travel"></i>Schedule A Tour</a></li>
                 <li class="navTour"><a href="<?= base_url(); ?>/admin/tour/calendar"><i class="notika-icon notika-travel"></i>Tour Calendar</a></li>
                 <li class="navTestimonial"><a href="<?= base_url(); ?>/admin/testimonial"><i class="notika-icon notika-support"></i>Testimonial</a></li>
+                <li class="navFaq"><a href="<?= base_url(); ?>/admin/faq"><i class="notika-icon notika-question"></i>FAQ</a></li>
                 <li class="navSetting"><a data-toggle="tab" href="#user"><i class="notika-icon notika-support"></i>Admin</a></li>
             </ul> 
     

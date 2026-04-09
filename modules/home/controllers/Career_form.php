@@ -128,7 +128,7 @@ class Career_form extends HOME_Controller {
 
             $file_data = $this->upload->data();
 
-            $post_data['e_resume'] = base_url('assets/uploads/') . $file_data['file_name']; // Store the full URL in the database
+            $post_data['e_resume'] = 'assets/uploads/' . $file_data['file_name']; // Store relative path in the database
 
 
 

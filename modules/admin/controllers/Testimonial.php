@@ -19,7 +19,7 @@ class Testimonial extends ADMIN_Controller {
  
         foreach($t as $row) {
             $t_id = $row->t_id;
-            $imageUrl = $row->t_path;
+            $imageUrl = img_url($row->t_path);
         
             $t = "<img class='img-round' title='".$imageUrl."' src='".$imageUrl."' style='height:30px; width:50px;'  />";
         
@@ -50,6 +50,12 @@ class Testimonial extends ADMIN_Controller {
         $data['t_id'] = $this->input->post("t_id");
         $this->load->model("testimonial_model");
         $d = $this->testimonial_model->get_single_testimonial($data);
+        if (isset($d['t_path'])) {
+            $d['t_path'] = img_url($d['t_path']);
+        }
+        if (isset($d['t_path_two']) && !empty($d['t_path_two'])) {
+            $d['t_path_two'] = img_url($d['t_path_two']);
+        }
         echo json_encode($d);
     }
     

@@ -44,8 +44,8 @@
 "@context": "https://schema.org",
 "@type": "School",
 "name": "Harvest Green Montessori",
-"url": "https://harvestgreenmontessori.com/",
-"logo": "https://harvestgreenmontessori.com/assets/img/logo1.png",
+"url": "<?= base_url() ?>",
+"logo": "<?= base_url('assets/home/images/logo/harvest.png') ?>",
 "contactPoint": {
 "@type": "ContactPoint",
 "telephone": "281-819-PLAY (7529)",
@@ -173,6 +173,7 @@
                                                 <li><a href="<?= base_url(); ?>Gallery">Picture Gallery</a></li>
                                                 <li><a href="<?= base_url(); ?>Uniform">Uniform</a></li>
                                                 <li><a href="<?= base_url(); ?>Lunch">Lunch</a></li>
+                                                <li><a href="<?= base_url(); ?>Faq">FAQ</a></li>
                                             </ul>
                                         </li>
                                         <li><a href="<?= base_url(); ?>Career">Careers</a></li>

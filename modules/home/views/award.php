@@ -66,7 +66,7 @@
 
 								<a href="#">
 
-									<img src="'.$row->img_path.'" alt="gallery images">
+									<img src="'.img_url($row->img_path).'" alt="gallery images">
 
 								</a>
 
@@ -78,7 +78,7 @@
 
 									<ul class="gallery__zoom">
 
-										<li><a href="'.$row->img_path.'" data-lightbox="grportimg" data-title="'.$row->img_desc.'"><i class="fa fa-crosshairs"></i></a></li>
+										<li><a href="'.img_url($row->img_path).'" data-lightbox="grportimg" data-title="'.$row->img_desc.'"><i class="fa fa-crosshairs"></i></a></li>
 
 									</ul>
 

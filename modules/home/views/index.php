@@ -7,7 +7,7 @@
 			<?php 
 			foreach($gallery as $row){
 				echo'
-			<div class="slider__area  d-flex fullscreen justify-content-start align-items-center" style="  background-image: url('.$row->img_path.');
+				<div class="slider__area  d-flex fullscreen justify-content-start align-items-center" style="  background-image: url('.img_url($row->img_path).');
 			background-repeat: no-repeat;
 			background-size: cover;
 			background-position: center center;">
@@ -205,7 +205,7 @@
 						
 					</div>
 					<div class="col-lg-4">
-						<img src="<?= $event_daily[0]->event_path; ?>" alt="" class="w-100 event-img">
+						<img src="<?= img_url($event_daily[0]->event_path); ?>" alt="" class="w-100 event-img">
 					</div>
 				</div>
 			</div>
@@ -471,13 +471,13 @@
 					<div class="gallery p-1">
 						<div class="gallery__thumb">
 							<a href="#">
-								<img src="'.$row->img_path.'" alt="gallery images" class="img-thumbnail">
+								<img src="'.img_url($row->img_path).'" alt="gallery images" class="img-thumbnail">
 							</a>
 						</div>
 						<div class="gallery__hover__inner"> 
 							<div class="gallery__hover__action">
 								<ul class="gallery__zoom">
-									<li><a href="'.$row->img_path.'" data-lightbox="grportimg" data-title="'.$row->img_desc.'"><i class="fa fa-crosshairs"></i></a></li>
+									<li><a href="'.img_url($row->img_path).'" data-lightbox="grportimg" data-title="'.$row->img_desc.'"><i class="fa fa-crosshairs"></i></a></li>
 								</ul>
 								<h4 class="gallery__title"><a href="#">'.$row->img_title.'</a></h4>
 							</div>
@@ -514,7 +514,7 @@
 								// Check if video path is available
 								$videoIcon = '';
 								if (!empty($row->t_path_two)) {
-									$videoIcon = '<a class="video" href="'.$row->t_path_two.'" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-play"></i></a>';
+									$videoIcon = '<a class="video" href="'.img_url($row->t_path_two).'" data-toggle="modal" data-target=".bd-example-modal-lg"><i class="fa fa-play"></i></a>';
 								}
 
 								echo '
@@ -522,7 +522,7 @@
 									<!-- Start Single Testimonial -->
 									<div class="testimonial text-center testi_border">
 										<div class="testimonial__inner">
-											<div class="test__icon" style="  background-image: url('.$row->t_path.');
+<div class="test__icon" style="  background-image: url('.img_url($row->t_path).');
 											background-repeat: no-repeat;
 											background-size: cover;
 											background-position: center center;
@@ -564,7 +564,7 @@
 									<div class="modal-dialog modal-lg">
 										<div class="modal-content">
 											<video width="100%" controls>
-												<source src="'.$row->t_path_two.'">
+											<source src="'.img_url($row->t_path_two).'">
 											</video>
 										</div>
 									</div>

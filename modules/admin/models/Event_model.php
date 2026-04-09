@@ -29,11 +29,11 @@ public function add_event($row) {
         
         if (!$this->upload->do_upload('event_path')) {
             // If no file is uploaded, use default image
-            $path = base_url("assets/home/images/others/little_boy.png");
+            $path = "assets/home/images/others/little_boy.png";
         } else {
             // If file is uploaded, use the uploaded file
             $file_data = $this->upload->data();
-            $path = base_url("assets/uploads/".$file_data['file_name']);
+            $path = "assets/uploads/".$file_data['file_name'];
         }
         
         if(isset($row['ytb_link'])) {
@@ -119,6 +119,8 @@ public function add_event($row) {
         $config['allowed_types'] = 'gif|jpg|png|jpeg';
 
 		$this->load->library('upload', $config);
+
+		$old_record = $this->db->get_where('event', array('event_id' => $row['event_id_1']))->row_array();
 		
 		if ( ! $this->upload->do_upload('edit_event_path'))
 		{
@@ -128,7 +130,7 @@ public function add_event($row) {
 		else
 		{
 			$file_data = $this->upload->data();
-			$path = base_url("assets/uploads/".$file_data['file_name']);
+			$path = "assets/uploads/".$file_data['file_name'];
 		
 		
 			$data = array('event_path' => $path);
@@ -138,6 +140,12 @@ public function add_event($row) {
 			if ($query) {
 				$valid['status'] = "success";
 				$valid['messages'] = "Image updated successfully";
+				if (!empty($old_record['event_path']) && strpos($old_record['event_path'], 'assets/uploads/') !== false) {
+					$old_file = './assets/uploads/' . basename($old_record['event_path']);
+					if (file_exists($old_file)) {
+						@unlink($old_file);
+					}
+				}
 			} else {
 				$valid['status'] = "warning";
 				$valid['messages'] = "Can't update this image";

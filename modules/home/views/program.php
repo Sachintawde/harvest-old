@@ -1030,7 +1030,7 @@
 
                             <div class="col-lg-5 col-md-12 mb-3">
 
-                                <img src="<?= $program['program_path'] ?>" alt="about" class="img-fluid radius_two w-100">
+                                <img src="<?= img_url($program['program_path']) ?>" alt="about" class="img-fluid radius_two w-100">
 
                             </div>
 
@@ -1046,7 +1046,7 @@
 
                             <div class="col-lg-5 col-md-12 mb-3">
 
-                                <img src="<?= $program['program_path_two'] ?>" alt="about" class="img-fluid radius_two w-100">
+                                <img src="<?= img_url($program['program_path_two']) ?>" alt="about" class="img-fluid radius_two w-100">
 
                             </div>
 

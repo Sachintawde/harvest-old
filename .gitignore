@@ -16,6 +16,13 @@ application/logs/*
 uploads/*
 !uploads/index.html
 
+# Assets uploads folder
+assets/uploads/
+
+# Images folders
+assets/home/images/
+assets/admin/images/
+
 # IDE and Editor Files
 .vscode/
 .idea/

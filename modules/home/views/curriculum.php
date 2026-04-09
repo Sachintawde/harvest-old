@@ -43,7 +43,7 @@
 									<p class="my-3">'.$row->c_desc.'</p>
 								</div>
 								<div class="col-lg-2">
-									<img src="'.$row->c_path.'" alt="about" class="rounded-circle">
+									<img src="'.img_url($row->c_path).'" alt="about" class="rounded-circle">
 								</div>
 							</div>';
                         }
@@ -51,7 +51,7 @@
 							echo '
 							<div class="row d_flex mt-4 px-40 py-3" style="background-color: #f8f8fc; border-radius: 15px;">
 								<div class="col-lg-2">
-									<img src="'.$row->c_path.'" alt="about" class="rounded-circle">
+									<img src="'.img_url($row->c_path).'" alt="about" class="rounded-circle">
 								</div>
 								<div class="col-lg-10">
 									<h2 class="f-24">'.$row->c_title.'</h2>

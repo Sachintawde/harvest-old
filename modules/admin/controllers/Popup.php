@@ -19,7 +19,7 @@ class Popup extends ADMIN_Controller {
  
         foreach($popup as $row) {
             $popup_id = $row->popup_id;
-            $imageUrl = $row->popup_path;
+            $imageUrl = img_url($row->popup_path);
         
             $popup = "<img class='img-round' title='".$imageUrl."' src='".$imageUrl."' style='height:30px; width:50px;'  />";
         
@@ -48,6 +48,9 @@ class Popup extends ADMIN_Controller {
         $data['popup_id'] = $this->input->post("popup_id");
         $this->load->model("popup_model");
         $d = $this->popup_model->get_single_popup($data);
+        if (isset($d['popup_path'])) {
+            $d['popup_path'] = img_url($d['popup_path']);
+        }
         echo json_encode($d);
     }
     

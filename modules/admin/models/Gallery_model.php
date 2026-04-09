@@ -36,7 +36,7 @@ class Gallery_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$path = base_url("assets/uploads/".$file_data['file_name']);
+			$path = "assets/uploads/".$file_data['file_name'];
 		
 			if(isset($row['ytb_link'])) {
 				$ytb_link = $row['ytb_link'];
@@ -118,6 +118,8 @@ class Gallery_model extends CI_Model{
         $config['allowed_types'] = 'gif|jpg|png|jpeg';
 
 		$this->load->library('upload', $config);
+
+		$old_record = $this->db->get_where('gallery', array('img_id' => $row['img_id_1']))->row_array();
 		
 		if ( ! $this->upload->do_upload('edit_img_path'))
 		{
@@ -127,7 +129,7 @@ class Gallery_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$path = base_url("assets/uploads/".$file_data['file_name']);
+			$path = "assets/uploads/".$file_data['file_name'];
 		
 		
 			$data = array('img_path' => $path);
@@ -136,7 +138,13 @@ class Gallery_model extends CI_Model{
 
 			if ($query) {
 				$valid['status'] = "success";
-				$valid['messages'] = "Image updated successfully"; 
+				$valid['messages'] = "Image updated successfully";
+				if (!empty($old_record['img_path']) && strpos($old_record['img_path'], 'assets/uploads/') !== false) {
+					$old_file = './assets/uploads/' . basename($old_record['img_path']);
+					if (file_exists($old_file)) {
+						@unlink($old_file);
+					}
+				}
 			} else {
 				$valid['status'] = "warning";
 				$valid['messages'] = "Can't update this image";

@@ -28,7 +28,7 @@
         				<div class="page__blog__details">
         					<article class="dacre__blog__details">
         						<div class="blog__thumb">
-        							<img src="<?= $blog['blog_path'] ?>" alt="blog images">
+        							<img src="<?= img_url($blog['blog_path']) ?>" alt="blog images">
         						</div>
         						<div class="blog__inner">
         							<h2><?= $blog['blog_name'] ?></h2>
@@ -53,7 +53,7 @@
                                 foreach($latest as $row){ 
                                     echo '
 									<li>
-										<a href="'.base_url().'blog/details/'.strtolower(str_replace(" ","_",$row->blog_name)).'"><img src="'.$row->blog_path.'" alt="blog images"></a>
+									<a href="'.base_url().'blog/details/'.strtolower(str_replace(" ","_",$row->blog_name)).'"><img src="'.img_url($row->blog_path).'" alt="blog images"></a>
 										<div class="post__content">
 											<h6><a href="'.base_url().'blog/details/'.strtolower(str_replace(" ","_",$row->blog_name)).'">'.$row->blog_name.'</a></h6>
 											<span class="date"><i class="fa fa-calendar"></i>'.$row->blog_datee.'</span>

@@ -46,7 +46,7 @@ class Add_more_model extends CI_Model{
 	  
 			if($this->upload->do_upload('file_img')){
 			  $uploadData = $this->upload->data();
-			  $file_path = base_url("assets/uploads/".$uploadData['file_name']);
+			  $file_path = "assets/uploads/".$uploadData['file_name'];
 			  $file_name = $uploadData['file_name'];
 			  $data_img['img_path'][] = $file_path;
 			  $img_sent = true;	
@@ -127,6 +127,8 @@ class Add_more_model extends CI_Model{
         $config['allowed_types'] = 'gif|jpg|png|jpeg';
 
 		$this->load->library('upload', $config);
+
+		$old_record = $this->db->get_where('gallery_pic', array('gp_id' => $row['img_id_1']))->row_array();
 		
 		if ( ! $this->upload->do_upload('edit_img_path'))
 		{
@@ -136,7 +138,7 @@ class Add_more_model extends CI_Model{
 		else
 		{
 			$file_data = $this->upload->data();
-			$path = base_url("assets/uploads/".$file_data['file_name']);
+			$path = "assets/uploads/".$file_data['file_name'];
 		
 			$data = array('gp_path' => $path);
 
@@ -145,6 +147,12 @@ class Add_more_model extends CI_Model{
 			if ($query) {
 				$valid['status'] = "success";
 				$valid['messages'] = "Image updated successfully";
+				if (!empty($old_record['gp_path']) && strpos($old_record['gp_path'], 'assets/uploads/') !== false) {
+					$old_file = './assets/uploads/' . basename($old_record['gp_path']);
+					if (file_exists($old_file)) {
+						@unlink($old_file);
+					}
+				}
 			} else {
 				$valid['status'] = "warning";
 				$valid['messages'] = "Can't update this image";
