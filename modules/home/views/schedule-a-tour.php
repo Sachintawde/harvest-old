@@ -252,7 +252,7 @@ if ($this->session->flashdata('error')) {
                 </div>
 
                 <!-- reCAPTCHA -->
-                <div class="g-recaptcha mt-3" data-sitekey="6LdfSIcsAAAAAMC_jXASqjlCXIz51K5KoWlJ-LWd"></div>
+                <div class="g-recaptcha mt-3" data-sitekey="6Le72CQqAAAAAHW4TQ6RZSTX-Jmni63nSUOWqcpk"></div>
 
                 <button type="submit" class="tour-submit-btn">Submit tour request</button>
             </form>
