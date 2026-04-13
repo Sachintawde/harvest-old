@@ -68,7 +68,7 @@ error_reporting(E_ALL);
 	} else {
 		$_local_hosts = ['localhost', '127.0.0.1', 'harvest.com'];
 		$_sn = $_SERVER['SERVER_NAME'] ?? $_SERVER['HTTP_HOST'] ?? '';
-		define('ENVIRONMENT', in_array($_sn, $_local_hosts, true) ? 'local' : 'development');
+		define('ENVIRONMENT', in_array($_sn, $_local_hosts, true) ? 'local' : 'live');
 		unset($_local_hosts, $_sn);
 	}
 	(function () {
