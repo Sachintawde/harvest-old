@@ -387,55 +387,39 @@ function viewTour(Tour_id = null) {
 
                 var formattedDate = formatDate(response['t_sdate']);
 
+                var src        = response['t_source'] || '';
+                var refRow     = (src === 'Word of mouth' || src === 'Referred by a friend')
+                                 ? `<tr><th>Referral Name</th><td>${response['t_referral_name'] || '&mdash;'}</td></tr>` : '';
+                var child2     = (response['t_child_name_2'] && response['t_child_name_2'] !== 'N/A' && response['t_child_name_2'] !== '')
+                                 ? `<tr><th colspan="2" class="info"><i class="glyphicon glyphicon-user"></i> &nbsp; Child 2 Details</th></tr>
+									<tr><th>First Name</th><td>${response['t_child_name_2']}</td></tr>
+									<tr><th>Last Name</th><td>${response['t_child_lname_2']}</td></tr>
+									<tr><th>Date of Birth</th><td>${response['t_dob_2'] || '&mdash;'}</td></tr>
+									<tr><th>Program / Class</th><td>${response['t_class_2'] || '&mdash;'}</td></tr>` : '';
+
                 $('.view_tour_data').html(`
-					<div class="row">
-						<div class="col-md-6">
-							<h4>Child 1 Details</h4>
-							<p><b>First Name:</b> ${response['t_child_name_1']}</p>
-							<p><b>Last Name:</b> ${response['t_child_lname_1']}</p>
-							<p><b>Gender:</b> ${response['t_gender_1']}</p>
-							<p><b>Date of Birth:</b> ${response['t_dob_1']}</p>
-							<p><b>Class:</b> ${response['t_class_1']}</p>
-				
-							<h4>Child 2 Details</h4>
-							<p><b>First Name:</b> ${response['t_child_name_2']}</p>
-							<p><b>Last Name:</b> ${response['t_child_lname_2']}</p>
-							<p><b>Gender:</b> ${response['t_gender_2']}</p>
-							<p><b>Date of Birth:</b> ${response['t_dob_2']}</p>
-							<p><b>Class:</b> ${response['t_class_2']}</p>
-				
-							<h4>Parent Information</h4>
-							<p><b>Mother's First & Last Name:</b> ${response['t_mother_name']}</p>
-							<p><b>Mother's Phone:</b> ${response['t_mother_phone']}</p>
-							<p><b>Mother's Email:</b> ${response['t_mother_email']}</p>
-							<p><b>Father's First & Last Name:</b> ${response['t_father_name']}</p>
-							<p><b>Father's Phone:</b> ${response['t_father_phone']}</p>
-							<p><b>Father's Email:</b> ${response['t_father_email']}</p>
-				
-							<h4>Contact Details</h4>
-							<p><b>Address:</b> ${response['t_address']}</p>
-							<p><b>City:</b> ${response['t_city']}</p>
-							<p><b>State:</b> ${response['t_state']}</p>
-							<p><b>Zip Code:</b> ${response['t_zip_code']}</p>
-				
-							<h4>Additional Information</h4>
-							<p><b>Preferred Communication Method:</b> ${response['t_communication_method']}</p>
-							<p><b>Requested Start Date:</b> ${response['t_start_date_field']}</p>
-							<p><b>Time Slot:</b> ${response['t_time_slot']}</p>
-							<p><b>Has your child been in a Montessori school or childcare before?:</b> ${response['t_previous_school']}</p>
-							<p><b>What is most important to you when looking for a Montessori School?:</b> ${response['t_important_factors']}</p>
-							<p><b>How did you hear about Harvest Green Montessori School?:</b> ${response['t_source']}</p>
-							<p><b>Referral Name:</b> ${response['t_referral_name']}</p>
-							<p><b>Program of Interest:</b> ${response['t_program']}</p>
-							<p><b>Age Groups:</b> ${response['t_agegroups']}</p>
-							<p><b>Other Notes:</b> ${response['t_other_notes']}</p>
-				
-							<h4>Signature</h4>
-							<p><b>Signature:</b> ${response['t_signature'] !== 'N/A' ? `<img src="${response['t_signature']}" alt="Signature" width="150"/>` : 'N/A'}</p>
-							<p><b>Signature Date:</b> ${response['t_signature_date']}</p>
-						</div>
-					</div>
-				`);
+                    <table class="table table-bordered table-striped">
+                        <tbody>
+                            <tr><th colspan="2" class="info"><i class="glyphicon glyphicon-user"></i> &nbsp; Child 1 Details</th></tr>
+                            <tr><th>First Name</th><td>${response['t_child_name_1'] || '&mdash;'}</td></tr>
+                            <tr><th>Last Name</th><td>${response['t_child_lname_1'] || '&mdash;'}</td></tr>
+                            <tr><th>Date of Birth</th><td>${response['t_dob_1'] || '&mdash;'}</td></tr>
+                            <tr><th>Program of Interest</th><td>${response['t_program'] || '&mdash;'}</td></tr>
+                            ${child2}
+                            <tr><th colspan="2" class="info"><i class="glyphicon glyphicon-home"></i> &nbsp; Parent / Guardian Information</th></tr>
+                            <tr><th>Guardian Name</th><td>${response['t_mother_name'] || '&mdash;'}</td></tr>
+                            <tr><th>Phone</th><td>${response['t_mother_phone'] || '&mdash;'}</td></tr>
+                            <tr><th>Email</th><td>${response['t_mother_email'] || '&mdash;'}</td></tr>
+                            <tr><th colspan="2" class="info"><i class="glyphicon glyphicon-calendar"></i> &nbsp; Tour Information</th></tr>
+                            <tr><th>Tour Date</th><td>${response['t_start_date_field'] || '&mdash;'}</td></tr>
+                            <tr><th>Time Slot</th><td>${response['t_time_slot'] || '&mdash;'}</td></tr>
+                            <tr><th colspan="2" class="info"><i class="glyphicon glyphicon-info-sign"></i> &nbsp; Additional Information</th></tr>
+                            <tr><th>How Did You Hear About Us?</th><td>${src || '&mdash;'}</td></tr>
+                            ${refRow}
+                            <tr><th>Signature Date</th><td>${response['t_signature_date'] || '&mdash;'}</td></tr>
+                        </tbody>
+                    </table>
+                `);
 				
             } // /success
         }); // ajax function

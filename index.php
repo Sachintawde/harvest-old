@@ -55,30 +55,56 @@ error_reporting(E_ALL);
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-	// Load environment from .env file if available
-	$env_file = __DIR__ . '/.env';
-	if (file_exists($env_file)) {
-		$env_lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-		foreach ($env_lines as $line) {
-			if (strpos(trim($line), '#') === 0 || empty(trim($line))) {
-				continue;
+	// Load environment variables early (before CI boots) so they are available
+	// in config files. Resolution order mirrors the Env library:
+	//   .env.{CI_ENV}  →  env.{CI_ENV}  →  .env  →  env
+	//
+	// CI_ENV is set via Apache/nginx SetEnv directive.  When not explicitly set
+	// (e.g. during local development without a SetEnv directive), auto-detect:
+	//   • server name is localhost / 127.0.0.1 / harvest.com → 'local'
+	//   • everything else falls back to 'development'
+	if (isset($_SERVER['CI_ENV'])) {
+		define('ENVIRONMENT', $_SERVER['CI_ENV']);
+	} else {
+		$_local_hosts = ['localhost', '127.0.0.1', 'harvest.com'];
+		$_sn = $_SERVER['SERVER_NAME'] ?? $_SERVER['HTTP_HOST'] ?? '';
+		define('ENVIRONMENT', in_array($_sn, $_local_hosts, true) ? 'local' : 'development');
+		unset($_local_hosts, $_sn);
+	}
+	(function () {
+		$base = __DIR__ . DIRECTORY_SEPARATOR;
+		$env  = ENVIRONMENT;
+		$candidates = [
+			$base . ".env.{$env}",
+			$base . "env.{$env}",
+			$base . '.env',
+			$base . 'env',
+		];
+		$env_file = null;
+		foreach ($candidates as $path) {
+			if (file_exists($path)) { $env_file = $path; break; }
+		}
+		if ($env_file === null) { return; }
+		$lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		foreach ($lines as $line) {
+			$line = trim($line);
+			if ($line === '' || $line[0] === '#') { continue; }
+			if (strpos($line, '=') === false)      { continue; }
+			[$key, $value] = explode('=', $line, 2);
+			$key   = trim($key);
+			$value = trim($value);
+			if (strlen($value) > 1 &&
+				(($value[0] === '"' && substr($value, -1) === '"') ||
+				 ($value[0] === "'" && substr($value, -1) === "'"))) {
+				$value = substr($value, 1, -1);
 			}
-			if (strpos($line, '=') !== false) {
-				list($key, $value) = explode('=', $line, 2);
-				$key = trim($key);
-				$value = trim($value);
-				if ((substr($value, 0, 1) === '"' && substr($value, -1) === '"') ||
-					(substr($value, 0, 1) === "'" && substr($value, -1) === "'")) {
-					$value = substr($value, 1, -1);
-				}
+			if (!getenv($key)) {   // server/system vars always win
 				putenv("{$key}={$value}");
-				$_ENV[$key] = $value;
+				$_ENV[$key]    = $value;
 				$_SERVER[$key] = $value;
 			}
 		}
-	}
-	
-	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+	})();
 
 /*
  *---------------------------------------------------------------

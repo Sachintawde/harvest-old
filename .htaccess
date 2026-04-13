@@ -13,3 +13,9 @@ RewriteRule ^(.*)$ ./index.php/$1 [L]
 #RewriteRule ^(.*)$ ./index.php/{controller}/$1 [L]
 
 </IfModule>
+
+# Set the CodeIgniter environment.
+# Change to 'live' on the production server.
+<IfModule mod_env.c>
+    SetEnv CI_ENV local
+</IfModule>

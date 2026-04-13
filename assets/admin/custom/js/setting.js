@@ -89,4 +89,47 @@ $(document).ready(function () {
 		}
 		return false;
 	});
+
+	// Admin SMTP Settings (Gmail)
+	function handleSmtpForm(formId, messagesClass) {
+		$(formId).unbind('submit').bind('submit', function () {
+			var form = $(this);
+			var isValid = true;
+
+			form.find('input[type="text"], input[type="email"], input[type="password"], input[type="number"]').each(function () {
+				if ($(this).val() === '') {
+					isValid = false;
+					$(this).closest('.form-group').addClass('has-error');
+					if (!$(this).next('.text-danger').length) {
+						$(this).after('<p class="text-danger">This field is required</p>');
+					}
+				} else {
+					$(this).closest('.form-group').removeClass('has-error');
+					$(this).next('.text-danger').remove();
+				}
+			});
+
+			if (isValid) {
+				$.ajax({
+					url: form.attr('action'),
+					type: form.attr('method'),
+					data: form.serialize(),
+					dataType: 'json',
+					success: function (response) {
+						$(messagesClass).html('<div class="alert alert-' + response.status + '">' +
+							'<button type="button" class="close" data-dismiss="alert">&times;</button>' +
+							'<strong><i class="glyphicon glyphicon-ok-sign"></i></strong> ' + response.messages +
+							'</div>');
+						$('.alert-' + response.status).delay(500).show(10, function () {
+							$(this).delay(3000).hide(10, function () { $(this).remove(); });
+						});
+					}
+				});
+			}
+			return false;
+		});
+	}
+
+	handleSmtpForm('#adminSmtpForm', '.adminSmtpMessages');
+	handleSmtpForm('#applicantSmtpForm', '.applicantSmtpMessages');
 }); // /document

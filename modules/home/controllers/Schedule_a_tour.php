@@ -41,68 +41,180 @@ class Schedule_a_tour extends HOME_Controller
             }
             
     }
+    public function test_mail()
+    {
+        // ── Environment Info ──────────────────────────────────────────────────
+        $smtp  = $this->_smtp_config();
+        $host  = $smtp['smtp_host'];
+        $user  = $smtp['smtp_user'];
+        $proto = $smtp['smtp_crypto'] . ' / port ' . $smtp['smtp_port'];
+
+        $cacert = APPPATH . 'config/cacert.pem';
+        $cacert_status = is_file($cacert)
+            ? '<span class="ok">Found (' . number_format(filesize($cacert)) . ' bytes)</span>'
+            : '<span class="fail">MISSING — peer verification disabled</span>';
+
+        $html  = '<style>body{font-family:monospace;background:#0d1117;color:#c9d1d9;padding:20px}'
+               . 'h2{color:#58a6ff}.ok{color:#3fb950}.fail{color:#f85149}.warn{color:#d29922}'
+               . 'pre{background:#161b22;padding:12px;border-radius:6px;overflow:auto;font-size:12px}'
+               . 'table{border-collapse:collapse;width:100%;margin-bottom:16px}'
+               . 'td,th{border:1px solid #30363d;padding:8px 12px}th{background:#21262d}</style>';
+        $html .= '<h2>SMTP Diagnostic — Harvest Green Montessori</h2>';
+
+        // ── PHP + Extension check ─────────────────────────────────────────────
+        $openssl = defined('OPENSSL_VERSION_TEXT') ? OPENSSL_VERSION_TEXT : '<span class="fail">NOT LOADED — emails will fail</span>';
+        $curl_ok = function_exists('curl_version') ? '<span class="ok">loaded</span>' : '<span class="fail">missing</span>';
+        $email_class = get_class($this->email);
+        $html .= '<table><tr><th colspan=2>Environment</th></tr>'
+               . '<tr><td>PHP</td><td>' . phpversion() . '</td></tr>'
+               . '<tr><td>OpenSSL</td><td>' . $openssl . '</td></tr>'
+               . '<tr><td>cURL</td><td>' . $curl_ok . '</td></tr>'
+               . '<tr><td>Email Class</td><td>' . $email_class . ' <em>(should be MY_Email)</em></td></tr>'
+               . '<tr><td>cacert.pem</td><td>' . $cacert_status . '</td></tr>'
+               . '<tr><td>SMTP Host</td><td>' . htmlspecialchars($host) . '</td></tr>'
+               . '<tr><td>SMTP User</td><td>' . htmlspecialchars($user) . '</td></tr>'
+               . '<tr><td>Protocol</td><td>' . htmlspecialchars($proto) . '</td></tr>'
+               . '</table>';
+
+        // ── Port reachability ─────────────────────────────────────────────────
+        $html .= '<table><tr><th>Port</th><th>Reachable?</th></tr>';
+        foreach ([587, 465, 25] as $port) {
+            $fp = @fsockopen($host, $port, $errno, $errstr, 5);
+            if ($fp) {
+                fclose($fp);
+                $status = '<span class="ok">YES</span>';
+            } else {
+                $status = '<span class="fail">NO — ' . htmlspecialchars($errstr) . ' (' . $errno . ')</span>';
+            }
+            $html .= '<tr><td>' . $port . '</td><td>' . $status . '</td></tr>';
+        }
+        $html .= '</table>';
+
+        // ── SMTP send attempts ────────────────────────────────────────────────
+        $variations = [
+            'TLS / 587 (current config)' => array_merge($smtp, ['smtp_crypto' => 'tls', 'smtp_port' => 587, 'smtp_timeout' => 15]),
+            'SSL / 465'                  => array_merge($smtp, ['smtp_crypto' => 'ssl', 'smtp_port' => 465, 'smtp_timeout' => 15]),
+        ];
+
+        $html .= '<h2>Send Attempts</h2>';
+        foreach ($variations as $label => $cfg) {
+            $this->email->clear();
+            $this->email->initialize($cfg);
+            $this->email->from($user, 'Harvest Green Montessori');
+            $this->email->to($user);
+            $this->email->subject('[TEST] ' . $label . ' — ' . date('Y-m-d H:i:s'));
+            $this->email->message('<p>Diagnostic test sent at <strong>' . date('Y-m-d H:i:s') . '</strong> via <em>' . htmlspecialchars($label) . '</em>.</p>');
+
+            if ($this->email->send()) {
+                $html .= '<p class="ok">✔ ' . htmlspecialchars($label) . ' — <strong>SUCCESS</strong>. Check inbox at ' . htmlspecialchars($user) . '.</p>';
+                log_message('info', '[test_mail] SUCCESS via ' . $label);
+            } else {
+                $debug = htmlspecialchars($this->email->print_debugger());
+                $html .= '<p class="fail">✘ ' . htmlspecialchars($label) . ' — <strong>FAILED</strong></p><pre>' . $debug . '</pre>';
+                log_message('error', '[test_mail] FAILED via ' . $label . ': ' . $this->email->print_debugger(['headers', 'subject', 'body']));
+            }
+        }
+
+        $html .= '<p style="color:#8b949e;font-size:11px">Remove or protect this endpoint before deploying to production.</p>';
+        $this->output->set_header('Cache-Control: no-store, no-cache');
+        $this->output->set_content_type('text/html', 'utf-8');
+        echo $html;
+    }
+
     public function add_tour()
     {
         $this->load->library('form_validation');
     
-        // Set validation rules
-        $this->form_validation->set_rules('t_child_name_1', 'Child First Name', 'required|trim');
-        $this->form_validation->set_rules('t_child_lname_1', 'Child Last Name', 'required|trim');
-        $this->form_validation->set_rules('t_gender_1', 'Gender', 'required');
-        $this->form_validation->set_rules('t_dob_1', 'Date of Birth', 'required');
-        $this->form_validation->set_rules('t_class_1', 'Class', 'required');
-        $this->form_validation->set_rules('t_address', 'Address', 'required|trim');
-        $this->form_validation->set_rules('t_city', 'City', 'required|trim');
-        $this->form_validation->set_rules('t_state', 'State', 'required|trim');
-        $this->form_validation->set_rules('t_zip_code', 'Zip Code', 'required|numeric');
-        $this->form_validation->set_rules('t_mother_name', 'Mother Name', 'required|trim');
-        $this->form_validation->set_rules('t_mother_phone', 'Mother Phone', 'required|trim|numeric');
-        $this->form_validation->set_rules('t_mother_email', 'Mother Email', 'required|valid_email');
-        $this->form_validation->set_rules('t_father_name', 'Father Name', 'required|trim');
-        $this->form_validation->set_rules('t_father_phone', 'Father Phone', 'required|trim|numeric');
-        $this->form_validation->set_rules('t_father_email', 'Father Email', 'required|valid_email');
-        $this->form_validation->set_rules('t_communication_method', 'Preferred Communication Method', 'required');
-        $this->form_validation->set_rules('t_start_date_field', 'Preferred Start Date', 'required');
-        $this->form_validation->set_rules('t_time_slot', 'Preferred Time Slot', 'required');
-        $this->form_validation->set_rules('t_previous_school', 'Previous School', 'trim');
-        $this->form_validation->set_rules('t_important_factors', 'Important Factors', 'trim');
-        $this->form_validation->set_rules('t_source', 'How did you hear about us?', 'required');
-        $this->form_validation->set_rules('t_program', 'Program of Interest', 'required');
-        $this->form_validation->set_rules('t_referral_name', 'Referral Name', 'trim');
-        $this->form_validation->set_rules('t_other_notes', 'Additional Notes', 'trim');
-        $this->form_validation->set_rules('t_signature_date', 'Signature Date', 'required');
-        $this->form_validation->set_rules('t_agegroup[]', 'Age Group', 'required');
-    
+        // Required fields (match the new minimal form)
+        $this->form_validation->set_rules('t_guardian_first',  'First Name',           'required|trim');
+        $this->form_validation->set_rules('t_guardian_last',   'Last Name',            'required|trim');
+        $this->form_validation->set_rules('t_mother_phone',    'Phone',                'required|trim');
+        $this->form_validation->set_rules('t_mother_email',    'Email',                'required|valid_email');
+        $this->form_validation->set_rules('t_start_date_field','Preferred Tour Date',  'required');
+        $this->form_validation->set_rules('t_time_slot',       'Preferred Time',       'required');
+        $this->form_validation->set_rules('t_program',         'Program Interest',     'required');
+        $this->form_validation->set_rules('t_signature_date',  'Expected Start Date',  'required');
+        // Optional fields
+        $this->form_validation->set_rules('t_source',          'How did you hear',     'trim');
+        $this->form_validation->set_rules('t_child_name_1',    'Child First Name',     'trim');
+        $this->form_validation->set_rules('t_child_lname_1',   'Child Last Name',      'trim');
+        $this->form_validation->set_rules('t_dob_1',           'Date of Birth',        'trim');
+        $this->form_validation->set_rules('t_other_notes',     'Comment',              'trim');
+
         if ($this->form_validation->run() == FALSE) {
+            $this->session->set_flashdata('post_data', $this->input->post());
             $this->session->set_flashdata('error', validation_errors());
             redirect($_SERVER["HTTP_REFERER"]);
             return;
         }
-    
+
         $post_data = $this->input->post();
+
+        // Build full parent name from separate first / last fields
+        $post_data['t_mother_name'] = trim(
+            ($post_data['t_guardian_first'] ?? '') . ' ' . ($post_data['t_guardian_last'] ?? '')
+        );
+
+        // Set defaults for fields not present in the new form
+        $post_data += [
+            't_gender_1'             => '',
+            't_class_1'              => '',
+            't_class_2'              => $post_data['t_class_2'] ?? '',
+            't_child_name_2'         => '',
+            't_child_lname_2'        => '',
+            't_gender_2'             => '',
+            't_dob_2'                => '',
+            't_class_2'              => '',
+            't_address'              => '',
+            't_city'                 => '',
+            't_state'                => '',
+            't_zip_code'             => '',
+            't_father_name'          => '',
+            't_father_phone'         => '',
+            't_father_email'         => '',
+            't_communication_method' => 'phone',
+            't_previous_school'      => '',
+            't_important_factors'    => '',
+            't_referral_name'        => '',
+        ];
     
         // Verify reCAPTCHA
-        $recaptchaResponse = $post_data['g-recaptcha-response'] ?? '';
-        $secretKey = '6Le72CQqAAAAACYyIJBOp45GHI1TcoqDl3M_04dX';
-        $recaptchaUrl = "https://www.google.com/recaptcha/api/siteverify";
-    
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $recaptchaUrl);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, "secret={$secretKey}&response={$recaptchaResponse}");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $recaptchaResult = curl_exec($ch);
-        curl_close($ch);
-    
-        $recaptchaData = json_decode($recaptchaResult);
-    
-        if (!$recaptchaData->success) {
+        $recaptchaResponse = isset($post_data['g-recaptcha-response']) ? trim($post_data['g-recaptcha-response']) : '';
+        $secretKey         = '6LdfSIcsAAAAAAbz0dnD2aflssbcNuNzr2PK1XEB';
+
+        if (empty($recaptchaResponse)) {
             $this->session->set_flashdata('post_data', $_POST);
             $this->session->set_flashdata('msg', 'Please complete the reCAPTCHA verification.');
             $this->session->set_flashdata('head', 'Error');
             $this->session->set_flashdata('class', 'danger');
-            redirect($_SERVER["HTTP_REFERER"]);
+            redirect($_SERVER['HTTP_REFERER']);
             return;
+        }
+
+        $ch = curl_init('https://www.google.com/recaptcha/api/siteverify');
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['secret' => $secretKey, 'response' => $recaptchaResponse]));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        $recaptchaResult = curl_exec($ch);
+        $curlError       = curl_error($ch);
+        curl_close($ch);
+
+        if ($recaptchaResult === false) {
+            log_message('error', 'reCAPTCHA cURL error: ' . $curlError);
+            // Fail open only if cURL itself failed (network issue on server side)
+            // Comment this block out to enforce reCAPTCHA strictly
+        } else {
+            $recaptchaData = json_decode($recaptchaResult);
+            if (empty($recaptchaData->success)) {
+                $this->session->set_flashdata('post_data', $_POST);
+                $this->session->set_flashdata('msg', 'reCAPTCHA verification failed. Please try again.');
+                $this->session->set_flashdata('head', 'Error');
+                $this->session->set_flashdata('class', 'danger');
+                redirect($_SERVER['HTTP_REFERER']);
+                return;
+            }
         }
     
         // Process Signature
@@ -123,17 +235,21 @@ class Schedule_a_tour extends HOME_Controller
         }
     
         $post_data['t_signature'] = $file_name;
+        // t_agegroup[] is no longer in the new form; derive from program selection
         $t_agegroups = $this->input->post('t_agegroup', true);
-        $post_data['t_agegroups'] = (!empty($t_agegroups) && is_array($t_agegroups)) ? implode(',', $t_agegroups) : 'N/A';
+        $post_data['t_agegroups'] = (!empty($t_agegroups) && is_array($t_agegroups))
+            ? implode(',', $t_agegroups)
+            : (isset($post_data['t_program']) && $post_data['t_program'] !== '' ? $post_data['t_program'] : 'N/A');
     
         $this->load->model("schedule_a_tour_model");
         $valid = $this->schedule_a_tour_model->add_tour($post_data);
     
         if ($valid) {
             $tour_id = $this->db->insert_id();
-            $this->load->library('email'); // Get the last inserted ID
     
-            $parent_email = !empty($post_data['t_mother_email']) ? $post_data['t_mother_email'] : (!empty($post_data['t_father_email']) ? $post_data['t_father_email'] : $post_data['t_mail']);
+            $parent_email = !empty($post_data['t_mother_email'])
+                ? $post_data['t_mother_email']
+                : (!empty($post_data['t_father_email']) ? $post_data['t_father_email'] : '');
     
             $email_data = array_merge($post_data, [
                 't_signature' => !empty($post_data['t_signature']) ? base_url('uploads/signatures/' . $file_name) : 'N/A',
@@ -143,63 +259,63 @@ class Schedule_a_tour extends HOME_Controller
     
             $email_template1 = $this->load->view('schedule_template', $email_data, true);
             $email_template2 = $this->load->view('thank_template', [
-                'title' => 'Tour Confirmation',
-                'name' => !empty($post_data['t_father_name']) ? $post_data['t_father_name'] : ($post_data['t_mother_name'] ?? 'N/A'),
-                'phone' => !empty($post_data['t_father_phone']) ? $post_data['t_father_phone'] : ($post_data['t_mother_phone'] ?? 'N/A'),
-                'address' => $post_data['t_address'] ?? 'N/A',
-                'tour_id' => $tour_id
+                'name'         => $post_data['t_mother_name'] ?? 'Valued Guest',
+                'tour_date'    => $post_data['t_start_date_field'] ?? 'N/A',
+                'tour_time'    => $post_data['t_time_slot'] ?? 'N/A',
+                'tour_program' => $post_data['t_program'] ?? '',
+                'tour_id'      => $tour_id,
             ], true);
     
-            $mail1 = ['adrs' => 'info@harvestgreenmontessori.com', 'sub' => 'Schedule A Tour Form Submission', 'body' => $email_template1];
+            // Admin notification: send tour form details + ICS via Gmail SMTP to
+            // the configured ADMIN_MAIL_TO address. Uses a dedicated Gmail SMTP
+            // channel so it never triggers cPanel self-mail local delivery.
+            $mail1 = [
+                'sub'  => 'Tour Request Received — Submission Details',
+                'body' => $email_template1,
+            ];
+
+            // Parent confirmation (thank you note) sent via cPanel SMTP.
             $mail2 = ['adrs' => $parent_email, 'sub' => 'Thank you for scheduling a tour at Harvest Green Montessori', 'body' => $email_template2];
-    
-            $mail1_sent = $this->send_mail($mail1);
-            $mail2_sent = $this->send_mail($mail2);
-            
-            // Get the preferred communication method
-            $comm_method = isset($post_data['t_communication_method']) ? strtolower($post_data['t_communication_method']) : 'phone';
-            $contact_via = ($comm_method == 'email') ? 'via email' : 'via phone';
-            
-            if ($mail1_sent || $mail2_sent) {
-                // At least one email sent successfully
-                $ics_filename = 'tour_event_' . time() . '.ics';
-                $ics_content = $this->generate_ics_content($post_data);
-                
-                // Create directory if it doesn't exist
+
+            // Generate ICS and save before sending — attach it to the admin notification (mail1)
+            $ics_content  = $this->generate_ics_content($post_data);
+            $ics_filepath = null;
+            if (!empty($ics_content)) {
                 if (!is_dir(FCPATH . 'uploads/ics')) {
                     mkdir(FCPATH . 'uploads/ics', 0777, true);
                 }
-                
-                file_put_contents(FCPATH . 'uploads/ics/' . $ics_filename, $ics_content);
-
-                // Attach ICS file to admin email
-                $this->email->clear();
-                $this->email->from('info@harvestgreenmontessori.com', 'Harvest Green Montessori');
-                $this->email->to('info@harvestgreenmontessori.com');
-                $this->email->subject('Tour Event Scheduled');
-                $this->email->message('Please find the attached ICS file for the scheduled tour event.');
-                $this->email->attach(FCPATH . 'uploads/ics/' . $ics_filename);
-                $this->email->send();
-                
-                // Set success message
-                if ($mail1_sent && $mail2_sent) {
-                    $this->session->set_flashdata('success', 'Tour scheduled successfully! Confirmation emails have been sent.');
-                } else if ($mail1_sent) {
-                    $this->session->set_flashdata('success', 'Tour scheduled successfully! We have received your request and will contact you ' . $contact_via . '.');
-                } else {
-                    $this->session->set_flashdata('success', 'Tour scheduled successfully! A confirmation email has been sent to you.');
-                }
-                $this->session->set_flashdata('timestamp', time());
+                $ics_filename = 'tour_event_' . $tour_id . '_' . time() . '.ics';
+                $ics_filepath = FCPATH . 'uploads/ics/' . $ics_filename;
+                file_put_contents($ics_filepath, $ics_content);
             } else {
-                // Both emails failed but tour is still saved
-                $this->session->set_flashdata('success', 'Tour scheduled successfully! We will contact you soon ' . $contact_via . '.');
-                $this->session->set_flashdata('timestamp', time());
-                log_message('error', 'Schedule Tour: Both emails failed to send for tour_id: ' . $tour_id);
+                log_message('error', 'Schedule Tour: ICS content empty for tour_id: ' . $tour_id);
             }
+
+            // Send admin notification (tour form details + ICS) via Gmail SMTP
+            $mail1_sent = $this->send_admin_mail($mail1, $ics_filepath);
+
+            // Send parent thank-you confirmation via cPanel SMTP
+            $mail2_sent = $this->send_applicant_mail($mail2);
+
+            // Get the preferred communication method
+            $comm_method = isset($post_data['t_communication_method']) ? strtolower($post_data['t_communication_method']) : 'phone';
+            $contact_via = ($comm_method == 'email') ? 'via email' : 'via phone';
+
+            if ($mail1_sent && $mail2_sent) {
+                $this->session->set_flashdata('success', 'Tour scheduled successfully! Confirmation emails have been sent.');
+            } elseif ($mail1_sent) {
+                $this->session->set_flashdata('success', 'Tour scheduled successfully! We have received your request and will contact you ' . $contact_via . '.');
+            } elseif ($mail2_sent) {
+                $this->session->set_flashdata('success', 'Tour scheduled successfully! A confirmation email has been sent to you.');
+            } else {
+                $this->session->set_flashdata('success', 'Tour scheduled successfully! We will contact you soon ' . $contact_via . '.');
+                log_message('error', 'Schedule Tour: Both admin and parent emails failed to send for tour_id: ' . $tour_id);
+            }
+            $this->session->set_flashdata('timestamp', time());
     
             redirect($_SERVER["HTTP_REFERER"]);
         } else {
-            $this->session->set_flashdata('error', 'Failed to schedule the tour.');
+            // model already set flashdata('error') for specific failures
             redirect($_SERVER["HTTP_REFERER"]);
         }
     }
@@ -207,34 +323,40 @@ class Schedule_a_tour extends HOME_Controller
      // generate_ics_content function
      public function generate_ics_content($data)
      {
-         $startDate      = $data['t_start_date_field'];
-         $timeSlot       = $data['t_time_slot'];
-         $address        = $data['t_address'];
-         $child1_name = $data['t_child_name_1'];
-         $child1_class = $data['t_class_1'];
- 
-         // Extract start and end times from the time slot
-         [$startTime, $endTime] = explode('-', $timeSlot);
- 
+         $startDate   = $data['t_start_date_field'] ?? '';
+         $timeSlot    = $data['t_time_slot']         ?? '';
+         $address     = $data['t_address']            ?? '4100 Harvest Corner Drive, Richmond TX 77406';
+         $child1_name = $data['t_child_name_1']       ?? 'Child';
+         $child1_prog = $data['t_program']             ?? ($data['t_class_1'] ?? '');
+
+         if (empty($startDate) || strpos($timeSlot, '-') === false) {
+             return '';
+         }
+
+         // Parse start and end times from the time slot (e.g. "9:00AM-10:00AM")
+         $time_parts  = explode('-', $timeSlot);
+         $startTime   = date('H:i:s', strtotime(trim($time_parts[0])));
+         $endTime     = date('H:i:s', strtotime(trim($time_parts[1])));
+
          $startDateTime = date("Y-m-d H:i:s", strtotime("$startDate $startTime"));
          $endDateTime   = date("Y-m-d H:i:s", strtotime("$startDate $endTime"));
- 
+
          $start = gmdate("Ymd\THis\Z", strtotime($startDateTime));
          $end   = gmdate("Ymd\THis\Z", strtotime($endDateTime));
- 
-         // Build the ICS file content
-         $ics_content = "BEGIN:VCALENDAR\r\n";
-         $ics_content .= "PRODID:-//Harvest Green Montessori//NONSGML v1.0//EN\n";
+
+         // Build the ICS file content (RFC 5545 requires CRLF throughout)
+         $ics_content  = "BEGIN:VCALENDAR\r\n";
+         $ics_content .= "PRODID:-//Harvest Green Montessori//NONSGML v1.0//EN\r\n";
          $ics_content .= "VERSION:2.0\r\n";
          $ics_content .= "BEGIN:VEVENT\r\n";
          $ics_content .= "DTSTART:$start\r\n";
          $ics_content .= "DTEND:$end\r\n";
          $ics_content .= "SUMMARY:Tour Event\r\n";
-         $ics_content .= "DESCRIPTION:Tour scheduled for $child1_name and class $child1_class\r\n";
+         $ics_content .= "DESCRIPTION:Tour scheduled for $child1_name (program: $child1_prog)\r\n";
          $ics_content .= "LOCATION:$address\r\n";
          $ics_content .= "END:VEVENT\r\n";
          $ics_content .= "END:VCALENDAR\r\n";
- 
+
          return $ics_content;
      }
 

@@ -48,32 +48,196 @@ class HOME_Controller extends MY_Controller {
 
     
 
-    public function send_mail($mail){
-        /* mail template */
-        $this->load->config('email');
-        $this->load->library('email');
-        
-        $from_mail   = 'info@harvestgreenmontessori.com';
-        $from_name    =  "Harvest Green Montessori School";
-                
-        $this->email->from($from_mail, $from_name);
-        $this->email->to($mail['adrs']);
-        
-        // Only CC if sending to someone other than info@
-        if($mail['adrs'] != 'info@harvestgreenmontessori.com'){
-            $list = array('info@harvestgreenmontessori.com');
-            $this->email->cc($list);
+    /**
+     * Legacy SMTP config using MAIL_* env keys (kept for backward compatibility).
+     */
+    protected function _smtp_config()
+    {
+        $username = env('MAIL_USERNAME', '');
+        $password = env('MAIL_PASSWORD', '');
+
+        if (empty($username) || empty($password)) {
+            log_message('error', 'SMTP credentials missing. Set MAIL_USERNAME and MAIL_PASSWORD in env.' . ENVIRONMENT);
         }
-        
+
+        return array(
+            'protocol'     => 'smtp',
+            'smtp_host'    => env('MAIL_HOST',       'mail.harvestgreenmontessori.com'),
+            'smtp_crypto'  => env('MAIL_ENCRYPTION', 'ssl'),
+            'smtp_port'    => (int) env('MAIL_PORT', 465),
+            'smtp_user'    => $username,
+            'smtp_pass'    => $password,
+            'charset'      => 'utf-8',
+            'mailtype'     => 'html',
+            'wordwrap'     => TRUE,
+            'priority'     => 1,
+            'smtp_timeout' => 30,
+            'newline'      => "\r\n",
+            'crlf'         => "\r\n",
+        );
+    }
+
+    /**
+     * SMTP config for the admin-facing channel (Gmail).
+     * Reads ADMIN_MAIL_* keys from env file.
+     */
+    protected function _smtp_config_admin()
+    {
+        $username = env('ADMIN_MAIL_USERNAME', '');
+        $password = env('ADMIN_MAIL_PASSWORD', '');
+
+        if (empty($username) || empty($password)) {
+            log_message('error', 'Admin SMTP credentials missing. Set ADMIN_MAIL_USERNAME and ADMIN_MAIL_PASSWORD in env.' . ENVIRONMENT);
+        }
+
+        return array(
+            'protocol'     => 'smtp',
+            'smtp_host'    => env('ADMIN_MAIL_HOST',       'smtp.gmail.com'),
+            'smtp_crypto'  => env('ADMIN_MAIL_ENCRYPTION', 'tls'),
+            'smtp_port'    => (int) env('ADMIN_MAIL_PORT', 587),
+            'smtp_user'    => $username,
+            'smtp_pass'    => $password,
+            'charset'      => 'utf-8',
+            'mailtype'     => 'html',
+            'wordwrap'     => TRUE,
+            'priority'     => 1,
+            'smtp_timeout' => 30,
+            'newline'      => "\r\n",
+            'crlf'         => "\r\n",
+        );
+    }
+
+    /**
+     * SMTP config for the applicant-facing channel (cPanel).
+     * Reads APPLICANT_MAIL_* keys from env file.
+     */
+    protected function _smtp_config_applicant()
+    {
+        $username = env('APPLICANT_MAIL_USERNAME', '');
+        $password = env('APPLICANT_MAIL_PASSWORD', '');
+
+        if (empty($username) || empty($password)) {
+            log_message('error', 'Applicant SMTP credentials missing. Set APPLICANT_MAIL_USERNAME and APPLICANT_MAIL_PASSWORD in env.' . ENVIRONMENT);
+        }
+
+        return array(
+            'protocol'     => 'smtp',
+            'smtp_host'    => env('APPLICANT_MAIL_HOST',       'mail.harvestgreenmontessori.com'),
+            'smtp_crypto'  => env('APPLICANT_MAIL_ENCRYPTION', 'ssl'),
+            'smtp_port'    => (int) env('APPLICANT_MAIL_PORT', 465),
+            'smtp_user'    => $username,
+            'smtp_pass'    => $password,
+            'charset'      => 'utf-8',
+            'mailtype'     => 'html',
+            'wordwrap'     => TRUE,
+            'priority'     => 1,
+            'smtp_timeout' => 30,
+            'newline'      => "\r\n",
+            'crlf'         => "\r\n",
+        );
+    }
+
+    /**
+     * Send tour-details + ICS to the configured admin email address via Gmail SMTP.
+     * The recipient is always ADMIN_MAIL_TO from the env file — not hardcoded.
+     *
+     * @param  array       $mail  ['sub' => ..., 'body' => ...]
+     * @param  string|null $attachment  Absolute path to ICS file (optional)
+     * @return bool
+     */
+    public function send_admin_mail($mail, $attachment = null)
+    {
+        $this->email->clear(TRUE);
+        $this->email->initialize($this->_smtp_config_admin());
+
+        $from_address = env('ADMIN_MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        $from_name    = env('ADMIN_MAIL_FROM_NAME',    'Harvest Green Montessori School');
+        $admin_to     = env('ADMIN_MAIL_TO',           'info@harvestgreenmontessori.com');
+
+        $this->email->from($from_address, $from_name);
+        $this->email->reply_to($from_address, $from_name);
+        $this->email->to($admin_to);
         $this->email->subject($mail['sub']);
         $this->email->message($mail['body']);
-        $this->email->set_mailtype('html');
-        
-        if($this->email->send()){
+
+        if (!empty($attachment) && file_exists($attachment)) {
+            $this->email->attach($attachment);
+        }
+
+        if ($this->email->send()) {
+            log_message('info', 'Admin email sent successfully to: ' . $admin_to);
             return true;
-        }else{
-            // Log the error for debugging
-            log_message('error', 'Email send failed: ' . $this->email->print_debugger());
+        } else {
+            log_message('error', 'Admin email failed to [' . $admin_to . ']: ' . $this->email->print_debugger(['headers', 'subject', 'body']));
+            return false;
+        }
+    }
+
+    /**
+     * Send thank-you confirmation to the applicant (parent) via cPanel SMTP.
+     *
+     * @param  array $mail  ['adrs' => ..., 'sub' => ..., 'body' => ...]
+     * @return bool
+     */
+    public function send_applicant_mail($mail)
+    {
+        $this->email->clear(TRUE);
+        $this->email->initialize($this->_smtp_config_applicant());
+
+        $from_address = env('APPLICANT_MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        $from_name    = env('APPLICANT_MAIL_FROM_NAME',    'Harvest Green Montessori School');
+
+        $this->email->from($from_address, $from_name);
+        $this->email->reply_to($from_address, $from_name);
+        $this->email->to($mail['adrs']);
+        $this->email->subject($mail['sub']);
+        $this->email->message($mail['body']);
+
+        if ($this->email->send()) {
+            log_message('info', 'Applicant email sent successfully to: ' . $mail['adrs']);
+            return true;
+        } else {
+            log_message('error', 'Applicant email failed to [' . $mail['adrs'] . ']: ' . $this->email->print_debugger(['headers', 'subject', 'body']));
+            return false;
+        }
+    }
+
+    /**
+     * Legacy send_mail — uses the single MAIL_* SMTP config with auto-CC to admin.
+     * Still used by reminder emails and other controllers that have not migrated.
+     */
+    public function send_mail($mail, $attachment = null)
+    {
+        // clear(TRUE) resets everything including attachments — prevents state bleed between calls
+        $this->email->clear(TRUE);
+        $this->email->initialize($this->_smtp_config());
+
+        $from_address = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        $from_name    = env('MAIL_FROM_NAME',    'Harvest Green Montessori School');
+        $admin_email  = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+
+        $this->email->from($from_address, $from_name);
+        $this->email->reply_to($from_address, $from_name);
+        $this->email->to($mail['adrs']);
+
+        // CC admin on all parent-facing emails so admin always gets a copy
+        if ($mail['adrs'] !== $admin_email) {
+            $this->email->cc($admin_email);
+        }
+
+        $this->email->subject($mail['sub']);
+        $this->email->message($mail['body']);
+
+        if (!empty($attachment) && file_exists($attachment)) {
+            $this->email->attach($attachment);
+        }
+
+        if ($this->email->send()) {
+            log_message('info', 'Email sent successfully to: ' . $mail['adrs']);
+            return true;
+        } else {
+            // print_debugger with only headers/subject/body — never logs SMTP password
+            log_message('error', 'Email send failed to [' . $mail['adrs'] . ']: ' . $this->email->print_debugger(['headers', 'subject', 'body']));
             return false;
         }
     }

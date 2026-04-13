@@ -116,6 +116,200 @@
 	</div>
 </div>
 		
+<!-- Admin SMTP Settings (Gmail) -->
+<div class="container">
+	<div class="row">
+		<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+			<div class="form-element-list">
+				<div class="basic-tb-hd">
+					<h2>Admin Email SMTP <small style="font-size:13px;color:#777;">(Gmail — sends form details + ICS to admin)</small></h2>
+					<p>Outgoing mail server used to notify the admin when a tour is scheduled</p>
+				</div>
+				<div class="adminSmtpMessages"></div>
+				<form action="setting/update_admin_smtp" method="post" class="form-horizontal" id="adminSmtpForm">
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="text" name="ADMIN_MAIL_HOST" id="ADMIN_MAIL_HOST" class="form-control" value="<?= htmlspecialchars($admin_smtp['ADMIN_MAIL_HOST']) ?>">
+									<label class="nk-label">SMTP Host</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="number" name="ADMIN_MAIL_PORT" id="ADMIN_MAIL_PORT" class="form-control" value="<?= htmlspecialchars($admin_smtp['ADMIN_MAIL_PORT']) ?>">
+									<label class="nk-label">SMTP Port</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="text" name="ADMIN_MAIL_USERNAME" id="ADMIN_MAIL_USERNAME" class="form-control" value="<?= htmlspecialchars($admin_smtp['ADMIN_MAIL_USERNAME']) ?>">
+									<label class="nk-label">SMTP Username</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="password" name="ADMIN_MAIL_PASSWORD" id="ADMIN_MAIL_PASSWORD" class="form-control" value="<?= htmlspecialchars($admin_smtp['ADMIN_MAIL_PASSWORD']) ?>">
+									<label class="nk-label">SMTP Password / App Password</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<select name="ADMIN_MAIL_ENCRYPTION" id="ADMIN_MAIL_ENCRYPTION" class="form-control">
+										<option value="tls" <?= $admin_smtp['ADMIN_MAIL_ENCRYPTION'] === 'tls' ? 'selected' : '' ?>>TLS</option>
+										<option value="ssl" <?= $admin_smtp['ADMIN_MAIL_ENCRYPTION'] === 'ssl' ? 'selected' : '' ?>>SSL</option>
+										<option value="" <?= $admin_smtp['ADMIN_MAIL_ENCRYPTION'] === '' ? 'selected' : '' ?>>None</option>
+									</select>
+									<label class="nk-label">Encryption</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="email" name="ADMIN_MAIL_FROM_ADDRESS" id="ADMIN_MAIL_FROM_ADDRESS" class="form-control" value="<?= htmlspecialchars($admin_smtp['ADMIN_MAIL_FROM_ADDRESS']) ?>">
+									<label class="nk-label">From Address</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="text" name="ADMIN_MAIL_FROM_NAME" id="ADMIN_MAIL_FROM_NAME" class="form-control" value="<?= htmlspecialchars($admin_smtp['ADMIN_MAIL_FROM_NAME']) ?>">
+									<label class="nk-label">From Name</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="email" name="ADMIN_MAIL_TO" id="ADMIN_MAIL_TO" class="form-control" value="<?= htmlspecialchars($admin_smtp['ADMIN_MAIL_TO']) ?>">
+									<label class="nk-label">Admin Notification Email (Recipient)</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="form-group">
+								<button type="submit" class="btn btn-danger notika-btn-danger" id="adminSmtpSaveBtn">
+									<i class="glyphicon glyphicon-ok-sign"></i> Save Admin SMTP Settings
+								</button>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Applicant SMTP Settings (cPanel) -->
+<div class="container">
+	<div class="row">
+		<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+			<div class="form-element-list">
+				<div class="basic-tb-hd">
+					<h2>Applicant Email SMTP <small style="font-size:13px;color:#777;">(cPanel — sends thank-you to parent)</small></h2>
+					<p>Outgoing mail server used to send tour confirmation emails to applicant parents</p>
+				</div>
+				<div class="applicantSmtpMessages"></div>
+				<form action="setting/update_applicant_smtp" method="post" class="form-horizontal" id="applicantSmtpForm">
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="text" name="APPLICANT_MAIL_HOST" id="APPLICANT_MAIL_HOST" class="form-control" value="<?= htmlspecialchars($applicant_smtp['APPLICANT_MAIL_HOST']) ?>">
+									<label class="nk-label">SMTP Host</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="number" name="APPLICANT_MAIL_PORT" id="APPLICANT_MAIL_PORT" class="form-control" value="<?= htmlspecialchars($applicant_smtp['APPLICANT_MAIL_PORT']) ?>">
+									<label class="nk-label">SMTP Port</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="text" name="APPLICANT_MAIL_USERNAME" id="APPLICANT_MAIL_USERNAME" class="form-control" value="<?= htmlspecialchars($applicant_smtp['APPLICANT_MAIL_USERNAME']) ?>">
+									<label class="nk-label">SMTP Username</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="password" name="APPLICANT_MAIL_PASSWORD" id="APPLICANT_MAIL_PASSWORD" class="form-control" value="<?= htmlspecialchars($applicant_smtp['APPLICANT_MAIL_PASSWORD']) ?>">
+									<label class="nk-label">SMTP Password</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<select name="APPLICANT_MAIL_ENCRYPTION" id="APPLICANT_MAIL_ENCRYPTION" class="form-control">
+										<option value="ssl" <?= $applicant_smtp['APPLICANT_MAIL_ENCRYPTION'] === 'ssl' ? 'selected' : '' ?>>SSL</option>
+										<option value="tls" <?= $applicant_smtp['APPLICANT_MAIL_ENCRYPTION'] === 'tls' ? 'selected' : '' ?>>TLS</option>
+										<option value="" <?= $applicant_smtp['APPLICANT_MAIL_ENCRYPTION'] === '' ? 'selected' : '' ?>>None</option>
+									</select>
+									<label class="nk-label">Encryption</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="email" name="APPLICANT_MAIL_FROM_ADDRESS" id="APPLICANT_MAIL_FROM_ADDRESS" class="form-control" value="<?= htmlspecialchars($applicant_smtp['APPLICANT_MAIL_FROM_ADDRESS']) ?>">
+									<label class="nk-label">From Address</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group ic-cmp-int float-lb floating-lb">
+								<div class="form-ic-cmp"><i class="notika-icon notika-support"></i></div>
+								<div class="nk-int-st nk-toggled">
+									<input type="text" name="APPLICANT_MAIL_FROM_NAME" id="APPLICANT_MAIL_FROM_NAME" class="form-control" value="<?= htmlspecialchars($applicant_smtp['APPLICANT_MAIL_FROM_NAME']) ?>">
+									<label class="nk-label">From Name</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="form-group">
+								<button type="submit" class="btn btn-danger notika-btn-danger" id="applicantSmtpSaveBtn">
+									<i class="glyphicon glyphicon-ok-sign"></i> Save Applicant SMTP Settings
+								</button>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
 
 <?php $this->load->view('common/footer'); ?>
 <script src="<?= base_url(); ?>assets/admin/custom/js/setting.js"></script>

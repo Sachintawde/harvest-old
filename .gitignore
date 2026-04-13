@@ -62,3 +62,36 @@ yarn-error.log*
 # Configuration Files with Sensitive Data
 config/database.php
 config/config.php
+
+# =============================================================================
+# Environment files — contain real credentials, NEVER commit these
+# =============================================================================
+env.local
+env.live
+env.development
+env.testing
+env.staging
+.env
+.env.*
+
+# Commit ONLY the safe example template:
+!env.example
+
+# =============================================================================
+# Application runtime artefacts
+# =============================================================================
+application/logs/log-*.php
+application/cache/
+assets/uploads/
+uploads/signatures/
+uploads/ics/
+
+# =============================================================================
+# OS / editor noise
+# =============================================================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/

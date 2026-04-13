@@ -19,20 +19,33 @@ class Env {
     }
     
     /**
-     * Load environment variables from .env file
+     * Load environment variables from .env file.
+     *
+     * Resolution order (first file found wins):
+     *   1. .env.{environment}   e.g. .env.local  (dot-prefix, hidden-file style)
+     *   2.  env.{environment}   e.g.  env.local  (no-dot, Windows-friendly style)
+     *   3. .env                                  (root fallback, dot-prefix)
+     *   4.  env                                  (root fallback, no-dot)
      */
     private function load_env_file() {
-        // Determine environment file to load
-        $env = ENVIRONMENT;
-        $this->env_file = FCPATH . ".env.{$env}";
-        
-        // Fallback to .env if environment-specific file doesn't exist
-        if (!file_exists($this->env_file)) {
-            $this->env_file = FCPATH . '.env';
+        $env = ENVIRONMENT; // set via CI_ENV server var, defaults to 'development'
+
+        $candidates = [
+            FCPATH . ".env.{$env}",   // .env.local  / .env.live
+            FCPATH . "env.{$env}",    //  env.local  /  env.live  (files on disk)
+            FCPATH . '.env',           // shared root fallback
+            FCPATH . 'env',            // shared root fallback (no-dot)
+        ];
+
+        $this->env_file = null;
+        foreach ($candidates as $path) {
+            if (file_exists($path)) {
+                $this->env_file = $path;
+                break;
+            }
         }
-        
-        // Load environment variables
-        if (file_exists($this->env_file)) {
+
+        if ($this->env_file !== null) {
             $this->parse_env_file();
         }
     }
