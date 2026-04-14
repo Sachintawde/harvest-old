@@ -43,79 +43,88 @@ class Schedule_a_tour extends HOME_Controller
     }
     public function test_mail()
     {
-        // ── Environment Info ──────────────────────────────────────────────────
-        $smtp  = $this->_smtp_config();
-        $host  = $smtp['smtp_host'];
-        $user  = $smtp['smtp_user'];
-        $proto = $smtp['smtp_crypto'] . ' / port ' . $smtp['smtp_port'];
-
-        $cacert = APPPATH . 'config/cacert.pem';
-        $cacert_status = is_file($cacert)
-            ? '<span class="ok">Found (' . number_format(filesize($cacert)) . ' bytes)</span>'
-            : '<span class="fail">MISSING — peer verification disabled</span>';
+        $this->load->helper('env');
 
         $html  = '<style>body{font-family:monospace;background:#0d1117;color:#c9d1d9;padding:20px}'
-               . 'h2{color:#58a6ff}.ok{color:#3fb950}.fail{color:#f85149}.warn{color:#d29922}'
-               . 'pre{background:#161b22;padding:12px;border-radius:6px;overflow:auto;font-size:12px}'
-               . 'table{border-collapse:collapse;width:100%;margin-bottom:16px}'
-               . 'td,th{border:1px solid #30363d;padding:8px 12px}th{background:#21262d}</style>';
-        $html .= '<h2>SMTP Diagnostic — Harvest Green Montessori</h2>';
+               . 'h2{color:#58a6ff}h3{color:#e3b341;margin:0 0 12px}'
+               . '.ok{color:#3fb950}.fail{color:#f85149}.warn{color:#d29922}'
+               . 'pre{background:#161b22;padding:12px;border-radius:6px;overflow:auto;font-size:12px;white-space:pre-wrap}'
+               . 'table{border-collapse:collapse;width:100%;margin-bottom:12px}'
+               . 'td,th{border:1px solid #30363d;padding:8px 12px}th{background:#21262d}'
+               . '.box{border:1px solid #30363d;border-radius:6px;padding:16px 20px;margin-bottom:20px}</style>';
+        $html .= '<h2>SMTP Diagnostic &mdash; Harvest Green Montessori</h2>';
+        $html .= '<p>Environment: <strong>' . ENVIRONMENT . '</strong> &nbsp;|&nbsp; PHP: ' . phpversion()
+               . ' &nbsp;|&nbsp; ' . date('Y-m-d H:i:s') . ' (server time)</p>';
 
-        // ── PHP + Extension check ─────────────────────────────────────────────
-        $openssl = defined('OPENSSL_VERSION_TEXT') ? OPENSSL_VERSION_TEXT : '<span class="fail">NOT LOADED — emails will fail</span>';
-        $curl_ok = function_exists('curl_version') ? '<span class="ok">loaded</span>' : '<span class="fail">missing</span>';
-        $email_class = get_class($this->email);
-        $html .= '<table><tr><th colspan=2>Environment</th></tr>'
-               . '<tr><td>PHP</td><td>' . phpversion() . '</td></tr>'
-               . '<tr><td>OpenSSL</td><td>' . $openssl . '</td></tr>'
-               . '<tr><td>cURL</td><td>' . $curl_ok . '</td></tr>'
-               . '<tr><td>Email Class</td><td>' . $email_class . ' <em>(should be MY_Email)</em></td></tr>'
-               . '<tr><td>cacert.pem</td><td>' . $cacert_status . '</td></tr>'
-               . '<tr><td>SMTP Host</td><td>' . htmlspecialchars($host) . '</td></tr>'
-               . '<tr><td>SMTP User</td><td>' . htmlspecialchars($user) . '</td></tr>'
-               . '<tr><td>Protocol</td><td>' . htmlspecialchars($proto) . '</td></tr>'
+        $cacert = APPPATH . 'config/cacert.pem';
+        $html .= '<table><tr><th colspan="2">Server</th></tr>'
+               . '<tr><td>OpenSSL</td><td>' . (defined('OPENSSL_VERSION_TEXT') ? OPENSSL_VERSION_TEXT : '<span class="fail">NOT LOADED</span>') . '</td></tr>'
+               . '<tr><td>cacert.pem</td><td>' . (is_file($cacert) ? '<span class="ok">Found (' . number_format(filesize($cacert)) . ' bytes)</span>' : '<span class="fail">MISSING</span>') . '</td></tr>'
+               . '<tr><td>Email class</td><td>' . get_class($this->email) . '</td></tr>'
                . '</table>';
 
-        // ── Port reachability ─────────────────────────────────────────────────
-        $html .= '<table><tr><th>Port</th><th>Reachable?</th></tr>';
-        foreach ([587, 465, 25] as $port) {
-            $fp = @fsockopen($host, $port, $errno, $errstr, 5);
-            if ($fp) {
-                fclose($fp);
-                $status = '<span class="ok">YES</span>';
-            } else {
-                $status = '<span class="fail">NO — ' . htmlspecialchars($errstr) . ' (' . $errno . ')</span>';
-            }
-            $html .= '<tr><td>' . $port . '</td><td>' . $status . '</td></tr>';
-        }
-        $html .= '</table>';
+        // Helper: TCP port check
+        $port_status = function ($host, $port) {
+            $fp = @fsockopen($host, $port, $errno, $errstr, 6);
+            if ($fp) { fclose($fp); return '<span class="ok">OPEN</span>'; }
+            return '<span class="fail">BLOCKED &mdash; ' . htmlspecialchars($errstr) . ' (' . $errno . ')</span>';
+        };
 
-        // ── SMTP send attempts ────────────────────────────────────────────────
-        $variations = [
-            'TLS / 587 (current config)' => array_merge($smtp, ['smtp_crypto' => 'tls', 'smtp_port' => 587, 'smtp_timeout' => 15]),
-            'SSL / 465'                  => array_merge($smtp, ['smtp_crypto' => 'ssl', 'smtp_port' => 465, 'smtp_timeout' => 15]),
-        ];
-
-        $html .= '<h2>Send Attempts</h2>';
-        foreach ($variations as $label => $cfg) {
-            $this->email->clear();
+        // Helper: attempt actual SMTP send
+        $do_send = function ($label, $cfg, $from_addr, $to_addr) use (&$html) {
+            $this->email->clear(TRUE);
             $this->email->initialize($cfg);
-            $this->email->from($user, 'Harvest Green Montessori');
-            $this->email->to($user);
-            $this->email->subject('[TEST] ' . $label . ' — ' . date('Y-m-d H:i:s'));
-            $this->email->message('<p>Diagnostic test sent at <strong>' . date('Y-m-d H:i:s') . '</strong> via <em>' . htmlspecialchars($label) . '</em>.</p>');
-
+            $this->email->from($from_addr, 'HGM Diagnostic');
+            $this->email->to($to_addr);
+            $this->email->subject('[TEST] ' . $label . ' &mdash; ' . date('Y-m-d H:i:s'));
+            $this->email->message('<p>Diagnostic test via <strong>' . htmlspecialchars($label)
+                . '</strong> at ' . date('Y-m-d H:i:s') . '</p>');
             if ($this->email->send()) {
-                $html .= '<p class="ok">✔ ' . htmlspecialchars($label) . ' — <strong>SUCCESS</strong>. Check inbox at ' . htmlspecialchars($user) . '.</p>';
-                log_message('info', '[test_mail] SUCCESS via ' . $label);
+                $html .= '<p class="ok">&#10004; SENT &rarr; ' . htmlspecialchars($to_addr) . '</p>';
+                log_message('info', '[test_mail] ' . $label . ' OK -> ' . $to_addr);
             } else {
-                $debug = htmlspecialchars($this->email->print_debugger());
-                $html .= '<p class="fail">✘ ' . htmlspecialchars($label) . ' — <strong>FAILED</strong></p><pre>' . $debug . '</pre>';
-                log_message('error', '[test_mail] FAILED via ' . $label . ': ' . $this->email->print_debugger(['headers', 'subject', 'body']));
+                $dbg = $this->email->print_debugger();
+                $html .= '<p class="fail">&#10008; FAILED &rarr; ' . htmlspecialchars($to_addr) . '</p>'
+                       . '<pre>' . htmlspecialchars($dbg) . '</pre>';
+                log_message('error', '[test_mail] ' . $label . ' FAILED -> ' . $to_addr . ': '
+                    . $this->email->print_debugger(['headers', 'subject']));
             }
-        }
+        };
 
-        $html .= '<p style="color:#8b949e;font-size:11px">Remove or protect this endpoint before deploying to production.</p>';
+        // ── 1. Admin SMTP ─────────────────────────────────────────────────────
+        $html .= '<div class="box"><h3>&#9312; Admin SMTP (tour details + ICS &rarr; admin inbox)</h3>';
+        $a_cfg  = $this->_smtp_config_admin();
+        $a_from = env('ADMIN_MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        $a_to   = env('ADMIN_MAIL_TO', 'info@harvestgreenmontessori.com');
+        $html .= '<table>'
+               . '<tr><td>Host</td><td>' . htmlspecialchars($a_cfg['smtp_host']) . '</td></tr>'
+               . '<tr><td>Port ' . $a_cfg['smtp_port'] . '</td><td>' . $port_status($a_cfg['smtp_host'], $a_cfg['smtp_port']) . '</td></tr>'
+               . '<tr><td>Crypto</td><td>' . htmlspecialchars($a_cfg['smtp_crypto']) . '</td></tr>'
+               . '<tr><td>Auth user</td><td>' . htmlspecialchars($a_cfg['smtp_user']) . '</td></tr>'
+               . '<tr><td>From</td><td>' . htmlspecialchars($a_from) . '</td></tr>'
+               . '<tr><td>To (ADMIN_MAIL_TO)</td><td>' . htmlspecialchars($a_to) . '</td></tr>'
+               . '</table>';
+        $do_send('Admin SMTP', $a_cfg, $a_from, $a_to);
+        $html .= '</div>';
+
+        // ── 2. Applicant SMTP ─────────────────────────────────────────────────
+        $html .= '<div class="box"><h3>&#9313; Applicant SMTP (thank-you &rarr; parent)</h3>';
+        $p_cfg  = $this->_smtp_config_applicant();
+        $p_from = env('APPLICANT_MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        // Send test to admin Gmail to avoid self-mail during diagnostics
+        $p_to   = env('ADMIN_MAIL_TO', $p_cfg['smtp_user']);
+        $html .= '<table>'
+               . '<tr><td>Host</td><td>' . htmlspecialchars($p_cfg['smtp_host']) . '</td></tr>'
+               . '<tr><td>Port ' . $p_cfg['smtp_port'] . '</td><td>' . $port_status($p_cfg['smtp_host'], $p_cfg['smtp_port']) . '</td></tr>'
+               . '<tr><td>Crypto</td><td>' . htmlspecialchars($p_cfg['smtp_crypto']) . '</td></tr>'
+               . '<tr><td>Auth user</td><td>' . htmlspecialchars($p_cfg['smtp_user']) . '</td></tr>'
+               . '<tr><td>From</td><td>' . htmlspecialchars($p_from) . '</td></tr>'
+               . '<tr><td>Test sending TO</td><td>' . htmlspecialchars($p_to) . '</td></tr>'
+               . '</table>';
+        $do_send('Applicant SMTP', $p_cfg, $p_from, $p_to);
+        $html .= '</div>';
+
+        $html .= '<p style="color:#8b949e;font-size:11px">&#9888; Remove or protect this endpoint before leaving in production.</p>';
         $this->output->set_header('Cache-Control: no-store, no-cache');
         $this->output->set_content_type('text/html', 'utf-8');
         echo $html;
@@ -134,11 +143,11 @@ class Schedule_a_tour extends HOME_Controller
         $this->form_validation->set_rules('t_time_slot',       'Preferred Time',       'required');
         $this->form_validation->set_rules('t_program',         'Program Interest',     'required');
         $this->form_validation->set_rules('t_signature_date',  'Expected Start Date',  'required');
+        $this->form_validation->set_rules('t_source',          'How did you hear',     'required|trim');
+        $this->form_validation->set_rules('t_child_name_1',    'Child First Name',     'required|trim');
+        $this->form_validation->set_rules('t_child_lname_1',   'Child Last Name',      'required|trim');
+        $this->form_validation->set_rules('t_dob_1',           'Date of Birth',        'required|trim');
         // Optional fields
-        $this->form_validation->set_rules('t_source',          'How did you hear',     'trim');
-        $this->form_validation->set_rules('t_child_name_1',    'Child First Name',     'trim');
-        $this->form_validation->set_rules('t_child_lname_1',   'Child Last Name',      'trim');
-        $this->form_validation->set_rules('t_dob_1',           'Date of Birth',        'trim');
         $this->form_validation->set_rules('t_other_notes',     'Comment',              'trim');
 
         if ($this->form_validation->run() == FALSE) {

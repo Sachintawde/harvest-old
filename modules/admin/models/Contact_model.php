@@ -66,6 +66,50 @@ class Contact_model extends CI_Model{
 
 		return $valid;
 
+	}
+
+	public function save_contact($data)
+
+	{
+
+		$this->db->set('con_name',   $data['con_name']);
+
+		$this->db->set('con_lname',  $data['con_lname']);
+
+		$this->db->set('con_mail',   $data['con_mail']);
+
+		$this->db->set('con_mob',    $data['con_mob']);
+
+		$this->db->set('con_kid',    $data['con_kid']);
+
+		$this->db->set('con_msg',    $data['con_msg']);
+
+		$this->db->set('con_status', 1);
+
+		$this->db->set('con_date',   date('Y-m-d H:i:s'));
+
+		$query = $this->db->insert('contact');
+
+		$valid = array();
+
+		if ($query) {
+
+			$valid['status']   = "success";
+
+			$valid['messages'] = "Contact saved successfully";
+
+			$valid['con_id']   = $this->db->insert_id();
+
+		} else {
+
+			$valid['status']   = "error";
+
+			$valid['messages'] = "Could not save contact";
+
+		}
+
+		return $valid;
+
 	}  
 
 

@@ -154,7 +154,9 @@
 
                                     <th>Email</th>
 
-                                    <th>Mobile No.</th>
+                                    <th>Phone</th>
+
+                                    <th>Program of Interest</th>
 
                                     <th>Date</th>
 

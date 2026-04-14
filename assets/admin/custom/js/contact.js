@@ -44,7 +44,7 @@ $(document).ready(function() {
         function (settings, data, dataIndex) {
             var min = $('#min').datepicker('getDate');
             var max = $('#max').datepicker('getDate');
-            var startDate = new Date(data[4]);
+            var startDate = new Date(data[5]);
             if (min == null && max == null) {
                 return true;
             }
@@ -214,7 +214,19 @@ function viewContact(Contact_id = null) {
 				// setting the Contact name value 
 				
 
-				$('.view_contact_data').html('<div class="row"><div class="col-md-6"> <p><b> First Name : </b>'+response['con_name']+' </p> <p><b> Last Name : </b>'+response['con_lname']+' </p> <p><b>Email : </b>'+response['con_mail']+' </p> <p><b>Mobile No. : </b>'+response['con_mob']+' </p><p><b>Kids : </b>'+response['con_kid']+' </p><p><b>message : </b>'+response['con_msg']+' </p> </div> </div>');
+				$('.view_contact_data').html(
+					'<div class="row">' +
+					'<div class="col-md-12">' +
+					'<table class="table table-bordered table-striped">' +
+					'<tr><th style="width:35%">First Name</th><td>' + response['con_name'] + '</td></tr>' +
+					'<tr><th>Last Name</th><td>' + response['con_lname'] + '</td></tr>' +
+					'<tr><th>Email</th><td>' + response['con_mail'] + '</td></tr>' +
+					'<tr><th>Phone</th><td>' + (response['con_mob'] || '—') + '</td></tr>' +
+					'<tr><th>Program of Interest</th><td>' + (response['con_kid'] || '—') + '</td></tr>' +
+					'<tr><th>Message</th><td>' + (response['con_msg'] || '—') + '</td></tr>' +
+					'</table>' +
+					'</div></div>'
+				);
 			} // /success
 		}); // ajax function
 

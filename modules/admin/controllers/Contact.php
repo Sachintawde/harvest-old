@@ -72,6 +72,8 @@ class Contact extends ADMIN_Controller {
 
                 $row->con_mob,
 
+                ($row->con_kid ? $row->con_kid : '—'),
+
                 date('m-d-Y', strtotime($row->con_date)),
 
                 $button

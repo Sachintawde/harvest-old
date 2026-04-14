@@ -127,9 +127,9 @@ if ($this->session->flashdata('error')) {
 
                 <!-- How did you hear -->
                 <div class="tour-field">
-                    <label class="tour-form-label">How did you hear about us?</label>
+                    <label class="tour-form-label">How did you hear about us? <span class="imp">*</span></label>
                     <?php $sel_src = $fd['t_source'] ?? ''; ?>
-                    <select name="t_source" class="tour-form-control">
+                    <select name="t_source" class="tour-form-control" required>
                         <option value="">Select...</option>
                         <option value="Internet"   <?= $sel_src==='Internet'   ? 'selected':'' ?>>Internet</option>
                         <option value="Advertising"<?= $sel_src==='Advertising'? 'selected':'' ?>>Advertising</option>
@@ -144,18 +144,18 @@ if ($this->session->flashdata('error')) {
                 <div class="section-label">Child information</div>
                 <div class="tour-form-row">
                     <div class="tour-field">
-                        <label class="tour-form-label">Child First Name</label>
-                        <input type="text" name="t_child_name_1" class="tour-form-control" placeholder="First name" value="<?= htmlspecialchars($fd['t_child_name_1'] ?? '') ?>">
+                        <label class="tour-form-label">Child First Name <span class="imp">*</span></label>
+                        <input type="text" name="t_child_name_1" class="tour-form-control" placeholder="First name" value="<?= htmlspecialchars($fd['t_child_name_1'] ?? '') ?>" required>
                     </div>
                     <div class="tour-field">
-                        <label class="tour-form-label">Child Last Name</label>
-                        <input type="text" name="t_child_lname_1" class="tour-form-control" placeholder="Last name" value="<?= htmlspecialchars($fd['t_child_lname_1'] ?? '') ?>">
+                        <label class="tour-form-label">Child Last Name <span class="imp">*</span></label>
+                        <input type="text" name="t_child_lname_1" class="tour-form-control" placeholder="Last name" value="<?= htmlspecialchars($fd['t_child_lname_1'] ?? '') ?>" required>
                     </div>
                 </div>
                 <div class="tour-form-row">
                     <div class="tour-field">
-                        <label class="tour-form-label">Date of Birth</label>
-                        <input type="text" name="t_dob_1" id="t_dob_1" class="tour-form-control" placeholder="mm/dd/yyyy" value="<?= htmlspecialchars($fd['t_dob_1'] ?? '') ?>">
+                        <label class="tour-form-label">Date of Birth <span class="imp">*</span></label>
+                        <input type="text" name="t_dob_1" id="t_dob_1" class="tour-form-control" placeholder="mm/dd/yyyy" value="<?= htmlspecialchars($fd['t_dob_1'] ?? '') ?>" required>
                     </div>
                     <div class="tour-field">
                         <label class="tour-form-label">Expected Start Date <span class="imp">*</span></label>
