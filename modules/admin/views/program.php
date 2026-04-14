@@ -774,7 +774,7 @@ role="dialog">
                             <br>
 
                             <div class="form-group">
-                                <label for="edit_program_path" class="col-sm-3 control-label">Program Image:
+                                <label for="edit_program_path" class="col-sm-3 control-label">Main Image:
                                 </label>
                                 <label class="col-sm-1 control-label">:
                                 </label>
@@ -811,7 +811,7 @@ role="dialog">
                             <!-- /form-group-->
 
                             <div class="form-group">
-                                <label for="edit_program_path_two" class="col-sm-3 control-label">Program Image:
+                                <label for="edit_program_path_two" class="col-sm-3 control-label">Detail Image:
                                 </label>
                                 <label class="col-sm-1 control-label">:
                                 </label>

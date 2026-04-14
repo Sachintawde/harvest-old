@@ -468,7 +468,7 @@
 
                                 <div class="col-lg-5">
 
-                                    <img src="<?= base_url(); ?>assets/home/images/others/summer_camp_img.jpeg" alt="about" class="img-fluid radius_two w-100">
+                                    <img src="<?= img_url($program['program_path']) ?>" alt="Summer Camp" class="img-fluid radius_two w-100">
 
                                 </div>
 
@@ -484,7 +484,7 @@
 
                                     <br>
 
-                                    <a href="<?= base_url(); ?>assets/home/images/others/summer_camp_img.jpeg" target="_blank" class="button color-1">Detailed Summer Camp</a>
+                                    <a href="<?= !empty($program['program_path_two']) ? img_url($program['program_path_two']) : img_url($program['program_path']) ?>" target="_blank" class="button color-1">Detailed Summer Camp</a>
 
                                 </div>
 
