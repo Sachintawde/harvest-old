@@ -10,7 +10,7 @@
         text-align: center;
         position: relative;
         overflow: hidden;
-        margin-top: -1px;
+    }
     .contact-banner .banner-orbs {
         position: absolute;
         top: 10px;
@@ -321,7 +321,6 @@
                         <ul>
                             <li><a href="<?= base_url('Schedule_a_tour') ?>">Schedule a Tour</a></li>
                             <li><a href="<?= base_url('Admission') ?>">Admissions Information</a></li>
-                            <li><a href="<?= base_url('program') ?>">Our Programs</a></li>
                             <li><a href="<?= base_url('About') ?>">About The School</a></li>
                         </ul>
                     </div>

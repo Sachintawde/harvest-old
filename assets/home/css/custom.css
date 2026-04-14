@@ -10,3 +10,19 @@
     Note: This is style css.
 
 **********************************************************************************/
+
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.wrapper, #wrapper, #header, .jnr__header {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.top-hrader {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    display: block !important;
+}
