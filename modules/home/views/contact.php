@@ -50,6 +50,7 @@
         text-transform: uppercase;
         opacity: 0.92;
         margin: 0;
+        text-align: center;
     }
     /* --- Main Content Section --- */
     .contact-content-section {
