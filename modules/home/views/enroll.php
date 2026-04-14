@@ -338,7 +338,7 @@ if ($timestamp && ($current_time - $timestamp) > $timeout) {
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        <div class="g-recaptcha" data-sitekey="6Le72CQqAAAAAHW4TQ6RZSTX-Jmni63nSUOWqcpk"></div>
+                        <div class="g-recaptcha" data-sitekey="<?= getenv('RECAPTCHA_SITE_KEY_ENROLL') ?>"></div>
                     </div>
                 </div>
             </div>

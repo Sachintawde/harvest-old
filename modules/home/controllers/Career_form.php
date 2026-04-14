@@ -60,7 +60,7 @@ class Career_form extends HOME_Controller {
 
             $recaptchaResponse = $post_data['g-recaptcha-response'];
 
-            $secretKey = '6Lfyrl4pAAAAALUadpPngFuDvliPTmbinwGtZMK1';
+            $secretKey = getenv('RECAPTCHA_SECRET_KEY_CAREER');
 
             $recaptchaUrl = "https://www.google.com/recaptcha/api/siteverify?secret={$secretKey}&response={$recaptchaResponse}";
 

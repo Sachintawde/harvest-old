@@ -189,7 +189,7 @@ class Schedule_a_tour extends HOME_Controller
     
         // Verify reCAPTCHA
         $recaptchaResponse = isset($post_data['g-recaptcha-response']) ? trim($post_data['g-recaptcha-response']) : '';
-        $secretKey         = '6LdfSIcsAAAAAAbz0dnD2aflssbcNuNzr2PK1XEB';
+        $secretKey         = getenv('RECAPTCHA_SECRET_KEY_TOUR');
 
         if (empty($recaptchaResponse)) {
             $this->session->set_flashdata('post_data', $_POST);

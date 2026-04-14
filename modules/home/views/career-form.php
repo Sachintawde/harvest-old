@@ -256,7 +256,7 @@
 
                                 <div class="form-group">
 
-                                    <div class="g-recaptcha" data-sitekey="6Lfyrl4pAAAAAAtEqs_4rSZ9XMCWN1JXuoVs--We"></div>
+                                    <div class="g-recaptcha" data-sitekey="<?= getenv('RECAPTCHA_SITE_KEY_CAREER') ?>"></div>
 
                                 </div>
 
