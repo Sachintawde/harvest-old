@@ -90,7 +90,7 @@ $(document).ready(function () {
 		return false;
 	});
 
-	// Admin SMTP Settings (Gmail)
+	// SMTP Settings (Microsoft Outlook — single provider)
 	function handleSmtpForm(formId, messagesClass) {
 		$(formId).unbind('submit').bind('submit', function () {
 			var form = $(this);
@@ -130,6 +130,5 @@ $(document).ready(function () {
 		});
 	}
 
-	handleSmtpForm('#adminSmtpForm', '.adminSmtpMessages');
-	handleSmtpForm('#applicantSmtpForm', '.applicantSmtpMessages');
+	handleSmtpForm('#smtpForm', '.smtpMessages');
 }); // /document

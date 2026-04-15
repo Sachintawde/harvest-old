@@ -8,25 +8,15 @@ class Setting extends ADMIN_Controller {
 	public function index(){
 		$this->load->helper('env');
 
-		$data['admin_smtp'] = [
-			'ADMIN_MAIL_HOST'         => env('ADMIN_MAIL_HOST', ''),
-			'ADMIN_MAIL_PORT'         => env('ADMIN_MAIL_PORT', ''),
-			'ADMIN_MAIL_USERNAME'     => env('ADMIN_MAIL_USERNAME', ''),
-			'ADMIN_MAIL_PASSWORD'     => env('ADMIN_MAIL_PASSWORD', ''),
-			'ADMIN_MAIL_ENCRYPTION'   => env('ADMIN_MAIL_ENCRYPTION', 'tls'),
-			'ADMIN_MAIL_FROM_ADDRESS' => env('ADMIN_MAIL_FROM_ADDRESS', ''),
-			'ADMIN_MAIL_FROM_NAME'    => env('ADMIN_MAIL_FROM_NAME', ''),
-			'ADMIN_MAIL_TO'           => env('ADMIN_MAIL_TO', ''),
-		];
-
-		$data['applicant_smtp'] = [
-			'APPLICANT_MAIL_HOST'         => env('APPLICANT_MAIL_HOST', ''),
-			'APPLICANT_MAIL_PORT'         => env('APPLICANT_MAIL_PORT', ''),
-			'APPLICANT_MAIL_USERNAME'     => env('APPLICANT_MAIL_USERNAME', ''),
-			'APPLICANT_MAIL_PASSWORD'     => env('APPLICANT_MAIL_PASSWORD', ''),
-			'APPLICANT_MAIL_ENCRYPTION'   => env('APPLICANT_MAIL_ENCRYPTION', 'ssl'),
-			'APPLICANT_MAIL_FROM_ADDRESS' => env('APPLICANT_MAIL_FROM_ADDRESS', ''),
-			'APPLICANT_MAIL_FROM_NAME'    => env('APPLICANT_MAIL_FROM_NAME', ''),
+		$data['smtp'] = [
+			'MAIL_HOST'         => env('MAIL_HOST', 'smtp.office365.com'),
+			'MAIL_PORT'         => env('MAIL_PORT', 587),
+			'MAIL_USERNAME'     => env('MAIL_USERNAME', ''),
+			'MAIL_PASSWORD'     => env('MAIL_PASSWORD', ''),
+			'MAIL_ENCRYPTION'   => env('MAIL_ENCRYPTION', 'tls'),
+			'MAIL_FROM_ADDRESS' => env('MAIL_FROM_ADDRESS', ''),
+			'MAIL_FROM_NAME'    => env('MAIL_FROM_NAME', ''),
+			'ADMIN_MAIL_TO'     => env('ADMIN_MAIL_TO', ''),
 		];
 
 		$this->load->view('setting', $data);
@@ -47,21 +37,6 @@ class Setting extends ADMIN_Controller {
 		echo json_encode($d);		
 	}
 
-	public function update_admin_smtp(){
-		$post = $this->input->post();
-		$this->load->model('setting_model');
-		$d = $this->setting_model->update_admin_smtp($post);
-		echo json_encode($d);
-	}
-
-	public function update_applicant_smtp(){
-		$post = $this->input->post();
-		$this->load->model('setting_model');
-		$d = $this->setting_model->update_applicant_smtp($post);
-		echo json_encode($d);
-	}
-
-	// Legacy endpoint — kept for backward compatibility
 	public function update_smtp(){
 		$post = $this->input->post();
 		$this->load->model('setting_model');

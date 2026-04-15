@@ -69,8 +69,11 @@ class Setting_model extends CI_Model{
 			return ['status' => 'warning', 'messages' => 'Environment file is not writable'];
 		}
 
-		$allowed = ['MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD',
-		            'MAIL_ENCRYPTION', 'MAIL_FROM_ADDRESS', 'MAIL_FROM_NAME'];
+		$allowed = [
+			'MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD',
+			'MAIL_ENCRYPTION', 'MAIL_FROM_ADDRESS', 'MAIL_FROM_NAME',
+			'ADMIN_MAIL_TO',
+		];
 
 		$content = file_get_contents($env_file);
 
@@ -83,58 +86,6 @@ class Setting_model extends CI_Model{
 
 		if (file_put_contents($env_file, $content) !== false) {
 			return ['status' => 'success', 'messages' => 'SMTP settings updated successfully'];
-		}
-		return ['status' => 'warning', 'messages' => 'Failed to write environment file'];
-	}
-
-	public function update_admin_smtp($row){
-		$this->load->library('env');
-		$env_file = $this->env->get_env_file();
-
-		if (!$env_file || !is_writable($env_file)) {
-			return ['status' => 'warning', 'messages' => 'Environment file is not writable'];
-		}
-
-		$allowed = ['ADMIN_MAIL_HOST', 'ADMIN_MAIL_PORT', 'ADMIN_MAIL_USERNAME', 'ADMIN_MAIL_PASSWORD',
-		            'ADMIN_MAIL_ENCRYPTION', 'ADMIN_MAIL_FROM_ADDRESS', 'ADMIN_MAIL_FROM_NAME', 'ADMIN_MAIL_TO'];
-
-		$content = file_get_contents($env_file);
-
-		foreach ($allowed as $key) {
-			if (isset($row[$key])) {
-				$value = str_replace(["\r", "\n"], '', $row[$key]);
-				$content = $this->_update_env_key($content, $key, $value);
-			}
-		}
-
-		if (file_put_contents($env_file, $content) !== false) {
-			return ['status' => 'success', 'messages' => 'Admin SMTP settings updated successfully'];
-		}
-		return ['status' => 'warning', 'messages' => 'Failed to write environment file'];
-	}
-
-	public function update_applicant_smtp($row){
-		$this->load->library('env');
-		$env_file = $this->env->get_env_file();
-
-		if (!$env_file || !is_writable($env_file)) {
-			return ['status' => 'warning', 'messages' => 'Environment file is not writable'];
-		}
-
-		$allowed = ['APPLICANT_MAIL_HOST', 'APPLICANT_MAIL_PORT', 'APPLICANT_MAIL_USERNAME', 'APPLICANT_MAIL_PASSWORD',
-		            'APPLICANT_MAIL_ENCRYPTION', 'APPLICANT_MAIL_FROM_ADDRESS', 'APPLICANT_MAIL_FROM_NAME'];
-
-		$content = file_get_contents($env_file);
-
-		foreach ($allowed as $key) {
-			if (isset($row[$key])) {
-				$value = str_replace(["\r", "\n"], '', $row[$key]);
-				$content = $this->_update_env_key($content, $key, $value);
-			}
-		}
-
-		if (file_put_contents($env_file, $content) !== false) {
-			return ['status' => 'success', 'messages' => 'Applicant SMTP settings updated successfully'];
 		}
 		return ['status' => 'warning', 'messages' => 'Failed to write environment file'];
 	}

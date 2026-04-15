@@ -49,7 +49,8 @@ class HOME_Controller extends MY_Controller {
     
 
     /**
-     * Legacy SMTP config using MAIL_* env keys (kept for backward compatibility).
+     * Single SMTP config using MAIL_* env keys — routes through Microsoft Outlook.
+     * Used by all email channels: admin notifications, applicant confirmations, etc.
      */
     protected function _smtp_config()
     {
@@ -62,69 +63,9 @@ class HOME_Controller extends MY_Controller {
 
         return array(
             'protocol'     => 'smtp',
-            'smtp_host'    => env('MAIL_HOST',       'mail.harvestgreenmontessori.com'),
-            'smtp_crypto'  => env('MAIL_ENCRYPTION', 'ssl'),
-            'smtp_port'    => (int) env('MAIL_PORT', 465),
-            'smtp_user'    => $username,
-            'smtp_pass'    => $password,
-            'charset'      => 'utf-8',
-            'mailtype'     => 'html',
-            'wordwrap'     => TRUE,
-            'priority'     => 1,
-            'smtp_timeout' => 30,
-            'newline'      => "\r\n",
-            'crlf'         => "\r\n",
-        );
-    }
-
-    /**
-     * SMTP config for the admin-facing channel (Gmail).
-     * Reads ADMIN_MAIL_* keys from env file.
-     */
-    protected function _smtp_config_admin()
-    {
-        $username = env('ADMIN_MAIL_USERNAME', '');
-        $password = env('ADMIN_MAIL_PASSWORD', '');
-
-        if (empty($username) || empty($password)) {
-            log_message('error', 'Admin SMTP credentials missing. Set ADMIN_MAIL_USERNAME and ADMIN_MAIL_PASSWORD in env.' . ENVIRONMENT);
-        }
-
-        return array(
-            'protocol'     => 'smtp',
-            'smtp_host'    => env('ADMIN_MAIL_HOST',       'smtp.gmail.com'),
-            'smtp_crypto'  => env('ADMIN_MAIL_ENCRYPTION', 'tls'),
-            'smtp_port'    => (int) env('ADMIN_MAIL_PORT', 587),
-            'smtp_user'    => $username,
-            'smtp_pass'    => $password,
-            'charset'      => 'utf-8',
-            'mailtype'     => 'html',
-            'wordwrap'     => TRUE,
-            'priority'     => 1,
-            'smtp_timeout' => 30,
-            'newline'      => "\r\n",
-            'crlf'         => "\r\n",
-        );
-    }
-
-    /**
-     * SMTP config for the applicant-facing channel (cPanel).
-     * Reads APPLICANT_MAIL_* keys from env file.
-     */
-    protected function _smtp_config_applicant()
-    {
-        $username = env('APPLICANT_MAIL_USERNAME', '');
-        $password = env('APPLICANT_MAIL_PASSWORD', '');
-
-        if (empty($username) || empty($password)) {
-            log_message('error', 'Applicant SMTP credentials missing. Set APPLICANT_MAIL_USERNAME and APPLICANT_MAIL_PASSWORD in env.' . ENVIRONMENT);
-        }
-
-        return array(
-            'protocol'     => 'smtp',
-            'smtp_host'    => env('APPLICANT_MAIL_HOST',       'mail.harvestgreenmontessori.com'),
-            'smtp_crypto'  => env('APPLICANT_MAIL_ENCRYPTION', 'ssl'),
-            'smtp_port'    => (int) env('APPLICANT_MAIL_PORT', 465),
+            'smtp_host'    => env('MAIL_HOST',       'smtp.office365.com'),
+            'smtp_crypto'  => env('MAIL_ENCRYPTION', 'tls'),
+            'smtp_port'    => (int) env('MAIL_PORT', 587),
             'smtp_user'    => $username,
             'smtp_pass'    => $password,
             'charset'      => 'utf-8',
@@ -148,11 +89,11 @@ class HOME_Controller extends MY_Controller {
     public function send_admin_mail($mail, $attachment = null)
     {
         $this->email->clear(TRUE);
-        $this->email->initialize($this->_smtp_config_admin());
+        $this->email->initialize($this->_smtp_config());
 
-        $from_address = env('ADMIN_MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-        $from_name    = env('ADMIN_MAIL_FROM_NAME',    'Harvest Green Montessori School');
-        $admin_to     = env('ADMIN_MAIL_TO',           'info@harvestgreenmontessori.com');
+        $from_address = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        $from_name    = env('MAIL_FROM_NAME',    'Harvest Green Montessori School');
+        $admin_to     = env('ADMIN_MAIL_TO',     'info@harvestgreenmontessori.com');
 
         $this->email->from($from_address, $from_name);
         $this->email->reply_to($from_address, $from_name);
@@ -182,10 +123,10 @@ class HOME_Controller extends MY_Controller {
     public function send_applicant_mail($mail)
     {
         $this->email->clear(TRUE);
-        $this->email->initialize($this->_smtp_config_applicant());
+        $this->email->initialize($this->_smtp_config());
 
-        $from_address = env('APPLICANT_MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-        $from_name    = env('APPLICANT_MAIL_FROM_NAME',    'Harvest Green Montessori School');
+        $from_address = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        $from_name    = env('MAIL_FROM_NAME',    'Harvest Green Montessori School');
 
         $this->email->from($from_address, $from_name);
         $this->email->reply_to($from_address, $from_name);

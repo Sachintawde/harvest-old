@@ -109,7 +109,7 @@ class Config {
      */
     public function get_mail_config() {
         return array(
-            'host' => $this->get('MAIL_HOST', 'smtp.gmail.com'),
+            'host' => $this->get('MAIL_HOST', 'smtp.office365.com'),
             'port' => $this->get('MAIL_PORT', 587),
             'username' => $this->get('MAIL_USERNAME', ''),
             'password' => $this->get('MAIL_PASSWORD', ''),

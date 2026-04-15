@@ -14,9 +14,9 @@
 
 $config = array(
     'protocol'     => 'smtp',
-    'smtp_host'    => getenv('MAIL_HOST')       ?: 'mail.harvestgreenmontessori.com',
-    'smtp_crypto'  => getenv('MAIL_ENCRYPTION') ?: 'ssl',
-    'smtp_port'    => (int)(getenv('MAIL_PORT') ?: 465),
+    'smtp_host'    => getenv('MAIL_HOST')       ?: 'smtp.office365.com',
+    'smtp_crypto'  => getenv('MAIL_ENCRYPTION') ?: 'tls',
+    'smtp_port'    => (int)(getenv('MAIL_PORT') ?: 587),
     'smtp_user'    => getenv('MAIL_USERNAME')   ?: '',
     'smtp_pass'    => getenv('MAIL_PASSWORD')   ?: '',
     'charset'      => 'utf-8',
