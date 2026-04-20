@@ -131,20 +131,6 @@ class Schedule_a_tour extends HOME_Controller
         }
 
         // ── Env vars dump ─────────────────────────────────────────────────────
-        $html .= '<div class="box"><h3>&#9315
-
-        // ── Test 2: Send to ?to= param (optional external address) ────────────
-        $extra_to = $this->input->get('to');
-        if (!empty($extra_to) && filter_var($extra_to, FILTER_VALIDATE_EMAIL)) {
-            $html .= '<div class="box"><h3>&#9314; Test Send &rarr; External (' . htmlspecialchars($extra_to) . ')</h3>';
-            $do_send($cfg['protocol'], $cfg, $from, $extra_to);
-            $html .= '</div>';
-        } else {
-            $html .= '<div class="box"><h3>&#9314; Test Send &rarr; External</h3>'
-                   . '<p class="warn">Add <code>?to=you@gmail.com</code> to URL to test external delivery.</p></div>';
-        }
-
-        // ── Env vars dump ─────────────────────────────────────────────────────
         $html .= '<div class="box"><h3>&#9315; Key Environment Variables</h3>';
         $env_keys = ['APP_ENV', 'MAIL_PROTOCOL', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_ENCRYPTION', 'MAIL_USERNAME', 'MAIL_FROM_ADDRESS', 'ADMIN_MAIL_TO'];
         $html .= '<table>';
