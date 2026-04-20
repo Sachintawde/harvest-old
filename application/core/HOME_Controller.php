@@ -155,17 +155,10 @@ class HOME_Controller extends MY_Controller {
 
         $from_address = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
         $from_name    = env('MAIL_FROM_NAME',    'Harvest Green Montessori School');
-        $admin_email  = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
 
         $this->email->from($from_address, $from_name);
         $this->email->reply_to($from_address, $from_name);
         $this->email->to($mail['adrs']);
-
-        // CC admin on all parent-facing emails so admin always gets a copy
-        if ($mail['adrs'] !== $admin_email) {
-            $this->email->cc($admin_email);
-        }
-
         $this->email->subject($mail['sub']);
         $this->email->message($mail['body']);
 

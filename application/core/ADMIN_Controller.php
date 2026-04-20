@@ -63,17 +63,10 @@ class ADMIN_Controller extends MY_Controller {
 
     $from_mail = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
     $from_name = env('MAIL_FROM_NAME',    'Harvest Green Montessori');
-    $admin_to  = env('ADMIN_MAIL_TO',     'info@harvestgreenmontessori.com');
 
     $this->email->from($from_mail, $from_name);
     $this->email->reply_to($from_mail, $from_name);
     $this->email->to($mail['adrs']);
-
-    // CC admin on emails not already addressed to admin
-    if ($mail['adrs'] !== $admin_to) {
-        $this->email->cc($admin_to);
-    }
-
     $this->email->subject($mail['sub']);
     $this->email->message($mail['body']);
     
