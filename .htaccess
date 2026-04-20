@@ -15,7 +15,11 @@ RewriteRule ^(.*)$ ./index.php/$1 [L]
 </IfModule>
 
 # Set the CodeIgniter environment.
-# Change to 'live' on the production server.
-<IfModule mod_env.c>
-    SetEnv CI_ENV local
-</IfModule>
+# Uncomment ONE of the lines below depending on the server:
+#   - 'local' for local development
+#   - 'live'  for the production server
+# If neither is set, index.php auto-detects based on SERVER_NAME.
+#
+# <IfModule mod_env.c>
+#     SetEnv CI_ENV local
+# </IfModule>
