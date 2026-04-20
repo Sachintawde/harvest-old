@@ -58,6 +58,7 @@ class HOME_Controller extends MY_Controller {
         $username   = env('MAIL_USERNAME', '');
         $password   = env('MAIL_PASSWORD', '');
         $encryption = env('MAIL_ENCRYPTION', '');
+        $from_addr  = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
 
         $config = array(
             'protocol'     => $protocol,
@@ -69,7 +70,6 @@ class HOME_Controller extends MY_Controller {
             'crlf'         => "\r\n",
         );
 
-        // Only add SMTP settings when protocol is smtp
         if ($protocol === 'smtp') {
             $config['smtp_host']    = env('MAIL_HOST', 'smtp.office365.com');
             $config['smtp_port']    = (int) env('MAIL_PORT', 587);
@@ -79,6 +79,11 @@ class HOME_Controller extends MY_Controller {
             if (!empty($encryption)) {
                 $config['smtp_crypto'] = $encryption;
             }
+        } elseif ($protocol === 'sendmail') {
+            $config['mailpath'] = '/usr/sbin/sendmail -t -i -f ' . escapeshellarg($from_addr);
+        } elseif ($protocol === 'mail') {
+            // Set the envelope sender via the 5th mail() parameter
+            $config['mailpath'] = '/usr/sbin/sendmail';
         }
 
         return $config;
