@@ -54,13 +54,16 @@ class Schedule_a_tour extends HOME_Controller
                . '.box{border:1px solid #30363d;border-radius:6px;padding:16px 20px;margin-bottom:20px}</style>';
         $html .= '<h2>SMTP Diagnostic &mdash; Harvest Green Montessori</h2>';
         $html .= '<p>Environment: <strong>' . ENVIRONMENT . '</strong> &nbsp;|&nbsp; PHP: ' . phpversion()
-               . ' &nbsp;|&nbsp; ' . date('Y-m-d H:i:s') . ' (server time)</p>';
+               . ' &nbsp;|&nbsp; OS: ' . PHP_OS . ' &nbsp;|&nbsp; ' . date('Y-m-d H:i:s') . ' (server time)</p>';
 
         $cacert = APPPATH . 'config/cacert.pem';
-        $html .= '<table><tr><th colspan="2">Server</th></tr>'
+        $html .= '<table><tr><th colspan="2">Server Info</th></tr>'
                . '<tr><td>OpenSSL</td><td>' . (defined('OPENSSL_VERSION_TEXT') ? OPENSSL_VERSION_TEXT : '<span class="fail">NOT LOADED</span>') . '</td></tr>'
-               . '<tr><td>cacert.pem</td><td>' . (is_file($cacert) ? '<span class="ok">Found (' . number_format(filesize($cacert)) . ' bytes)</span>' : '<span class="fail">MISSING</span>') . '</td></tr>'
+               . '<tr><td>cacert.pem</td><td>' . (is_file($cacert) ? '<span class="ok">Found (' . number_format(filesize($cacert)) . ' bytes)</span>' : '<span class="warn">Not found (OK on Linux)</span>') . '</td></tr>'
                . '<tr><td>Email class</td><td>' . get_class($this->email) . '</td></tr>'
+               . '<tr><td>DIRECTORY_SEPARATOR</td><td>' . DIRECTORY_SEPARATOR . ' (' . (DIRECTORY_SEPARATOR === '\\' ? 'Windows — custom SMTP' : 'Linux — native CI SMTP') . ')</td></tr>'
+               . '<tr><td>fsockopen()</td><td>' . (function_exists('fsockopen') ? '<span class="ok">Available</span>' : '<span class="fail">DISABLED</span>') . '</td></tr>'
+               . '<tr><td>stream_socket_client()</td><td>' . (function_exists('stream_socket_client') ? '<span class="ok">Available</span>' : '<span class="fail">DISABLED</span>') . '</td></tr>'
                . '</table>';
 
         // Helper: TCP port check
@@ -76,53 +79,49 @@ class Schedule_a_tour extends HOME_Controller
             $this->email->initialize($cfg);
             $this->email->from($from_addr, 'HGM Diagnostic');
             $this->email->to($to_addr);
-            $this->email->subject('[TEST] ' . $label . ' &mdash; ' . date('Y-m-d H:i:s'));
+            $this->email->subject('[TEST] ' . $label . ' — ' . date('Y-m-d H:i:s'));
             $this->email->message('<p>Diagnostic test via <strong>' . htmlspecialchars($label)
                 . '</strong> at ' . date('Y-m-d H:i:s') . '</p>');
             if ($this->email->send()) {
                 $html .= '<p class="ok">&#10004; SENT &rarr; ' . htmlspecialchars($to_addr) . '</p>';
-                log_message('info', '[test_mail] ' . $label . ' OK -> ' . $to_addr);
             } else {
                 $dbg = $this->email->print_debugger();
                 $html .= '<p class="fail">&#10008; FAILED &rarr; ' . htmlspecialchars($to_addr) . '</p>'
                        . '<pre>' . htmlspecialchars($dbg) . '</pre>';
-                log_message('error', '[test_mail] ' . $label . ' FAILED -> ' . $to_addr . ': '
-                    . $this->email->print_debugger(['headers', 'subject']));
             }
         };
 
-        // ── 1. Admin SMTP ─────────────────────────────────────────────────────
-        $html .= '<div class="box"><h3>&#9312; Admin SMTP (tour details + ICS &rarr; admin inbox)</h3>';
-        $a_cfg  = $this->_smtp_config_admin();
-        $a_from = env('ADMIN_MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-        $a_to   = env('ADMIN_MAIL_TO', 'info@harvestgreenmontessori.com');
+        // ── SMTP Config ───────────────────────────────────────────────────────
+        $cfg    = $this->_smtp_config();
+        $from   = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        $admin  = env('ADMIN_MAIL_TO', 'info@harvestgreenmontessori.com');
+
+        $html .= '<div class="box"><h3>&#9312; SMTP Configuration</h3>';
         $html .= '<table>'
-               . '<tr><td>Host</td><td>' . htmlspecialchars($a_cfg['smtp_host']) . '</td></tr>'
-               . '<tr><td>Port ' . $a_cfg['smtp_port'] . '</td><td>' . $port_status($a_cfg['smtp_host'], $a_cfg['smtp_port']) . '</td></tr>'
-               . '<tr><td>Crypto</td><td>' . htmlspecialchars($a_cfg['smtp_crypto']) . '</td></tr>'
-               . '<tr><td>Auth user</td><td>' . htmlspecialchars($a_cfg['smtp_user']) . '</td></tr>'
-               . '<tr><td>From</td><td>' . htmlspecialchars($a_from) . '</td></tr>'
-               . '<tr><td>To (ADMIN_MAIL_TO)</td><td>' . htmlspecialchars($a_to) . '</td></tr>'
+               . '<tr><td>Host</td><td>' . htmlspecialchars($cfg['smtp_host']) . '</td></tr>'
+               . '<tr><td>Port</td><td>' . $cfg['smtp_port'] . ' &mdash; ' . $port_status($cfg['smtp_host'], $cfg['smtp_port']) . '</td></tr>'
+               . '<tr><td>Crypto</td><td>' . htmlspecialchars($cfg['smtp_crypto']) . '</td></tr>'
+               . '<tr><td>Auth user</td><td>' . htmlspecialchars($cfg['smtp_user']) . '</td></tr>'
+               . '<tr><td>Auth pass</td><td>' . (empty($cfg['smtp_pass']) ? '<span class="fail">EMPTY</span>' : str_repeat('*', strlen($cfg['smtp_pass']))) . '</td></tr>'
+               . '<tr><td>From</td><td>' . htmlspecialchars($from) . '</td></tr>'
+               . '<tr><td>ADMIN_MAIL_TO</td><td>' . htmlspecialchars($admin) . '</td></tr>'
                . '</table>';
-        $do_send('Admin SMTP', $a_cfg, $a_from, $a_to);
         $html .= '</div>';
 
-        // ── 2. Applicant SMTP ─────────────────────────────────────────────────
-        $html .= '<div class="box"><h3>&#9313; Applicant SMTP (thank-you &rarr; parent)</h3>';
-        $p_cfg  = $this->_smtp_config_applicant();
-        $p_from = env('APPLICANT_MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-        // Send test to admin Gmail to avoid self-mail during diagnostics
-        $p_to   = env('ADMIN_MAIL_TO', $p_cfg['smtp_user']);
-        $html .= '<table>'
-               . '<tr><td>Host</td><td>' . htmlspecialchars($p_cfg['smtp_host']) . '</td></tr>'
-               . '<tr><td>Port ' . $p_cfg['smtp_port'] . '</td><td>' . $port_status($p_cfg['smtp_host'], $p_cfg['smtp_port']) . '</td></tr>'
-               . '<tr><td>Crypto</td><td>' . htmlspecialchars($p_cfg['smtp_crypto']) . '</td></tr>'
-               . '<tr><td>Auth user</td><td>' . htmlspecialchars($p_cfg['smtp_user']) . '</td></tr>'
-               . '<tr><td>From</td><td>' . htmlspecialchars($p_from) . '</td></tr>'
-               . '<tr><td>Test sending TO</td><td>' . htmlspecialchars($p_to) . '</td></tr>'
-               . '</table>';
-        $do_send('Applicant SMTP', $p_cfg, $p_from, $p_to);
+        // ── Send test to admin ────────────────────────────────────────────────
+        $html .= '<div class="box"><h3>&#9313; Test Send &rarr; Admin</h3>';
+        $do_send('Office 365 SMTP', $cfg, $from, $admin);
         $html .= '</div>';
+
+        // ── Env vars dump ─────────────────────────────────────────────────────
+        $html .= '<div class="box"><h3>&#9314; Key Environment Variables</h3>';
+        $env_keys = ['APP_ENV', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_ENCRYPTION', 'MAIL_USERNAME', 'MAIL_FROM_ADDRESS', 'ADMIN_MAIL_TO'];
+        $html .= '<table>';
+        foreach ($env_keys as $k) {
+            $v = getenv($k);
+            $html .= '<tr><td>' . $k . '</td><td>' . ($v !== false ? htmlspecialchars($v) : '<span class="warn">NOT SET</span>') . '</td></tr>';
+        }
+        $html .= '</table></div>';
 
         $html .= '<p style="color:#8b949e;font-size:11px">&#9888; Remove or protect this endpoint before leaving in production.</p>';
         $this->output->set_header('Cache-Control: no-store, no-cache');

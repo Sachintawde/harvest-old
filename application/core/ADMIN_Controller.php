@@ -42,25 +42,45 @@ class ADMIN_Controller extends MY_Controller {
   }
 
   public function send_mail($mail){
-    $this->load->config('email'); // Load email configuration
-    $this->load->library('email');
-    
-    $from_mail = 'info@harvestgreenmontessori.com';
-    $from_name = 'Harvest Green Montessori';
-            
+    $this->email->clear(TRUE);
+
+    $smtp_cfg = array(
+        'protocol'     => 'smtp',
+        'smtp_host'    => env('MAIL_HOST',       'smtp.office365.com'),
+        'smtp_crypto'  => env('MAIL_ENCRYPTION', 'tls'),
+        'smtp_port'    => (int) env('MAIL_PORT', 587),
+        'smtp_user'    => env('MAIL_USERNAME',   ''),
+        'smtp_pass'    => env('MAIL_PASSWORD',   ''),
+        'charset'      => 'utf-8',
+        'mailtype'     => 'html',
+        'wordwrap'     => TRUE,
+        'priority'     => 1,
+        'smtp_timeout' => 30,
+        'newline'      => "\r\n",
+        'crlf'         => "\r\n",
+    );
+    $this->email->initialize($smtp_cfg);
+
+    $from_mail = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+    $from_name = env('MAIL_FROM_NAME',    'Harvest Green Montessori');
+    $admin_to  = env('ADMIN_MAIL_TO',     'info@harvestgreenmontessori.com');
+
     $this->email->from($from_mail, $from_name);
+    $this->email->reply_to($from_mail, $from_name);
     $this->email->to($mail['adrs']);
-    $this->email->cc(array('swapn007.sr@gmail.com', 'sachintawde548@gmail.com'));
+
+    // CC admin on emails not already addressed to admin
+    if ($mail['adrs'] !== $admin_to) {
+        $this->email->cc($admin_to);
+    }
+
     $this->email->subject($mail['sub']);
     $this->email->message($mail['body']);
-    $this->email->set_mailtype('html');
     
     if ($this->email->send()) {
         return true;
     } else {
-        // Log the error message for debugging
-        $error = $this->email->print_debugger();
-        log_message('error', $error);
+        log_message('error', 'ADMIN email failed to [' . $mail['adrs'] . ']: ' . $this->email->print_debugger(['headers', 'subject', 'body']));
         return false;
     }
 }
