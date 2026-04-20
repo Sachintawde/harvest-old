@@ -54,28 +54,31 @@ class HOME_Controller extends MY_Controller {
      */
     protected function _smtp_config()
     {
+        $protocol   = env('MAIL_PROTOCOL', 'mail');
         $username   = env('MAIL_USERNAME', '');
         $password   = env('MAIL_PASSWORD', '');
         $encryption = env('MAIL_ENCRYPTION', '');
 
         $config = array(
-            'protocol'     => 'smtp',
-            'smtp_host'    => env('MAIL_HOST',  'relay-hosting.secureserver.net'),
-            'smtp_port'    => (int) env('MAIL_PORT', 25),
-            'smtp_user'    => $username,
-            'smtp_pass'    => $password,
+            'protocol'     => $protocol,
             'charset'      => 'utf-8',
             'mailtype'     => 'html',
             'wordwrap'     => TRUE,
             'priority'     => 1,
-            'smtp_timeout' => 30,
             'newline'      => "\r\n",
             'crlf'         => "\r\n",
         );
 
-        // Only set smtp_crypto when encryption is explicitly configured
-        if (!empty($encryption)) {
-            $config['smtp_crypto'] = $encryption;
+        // Only add SMTP settings when protocol is smtp
+        if ($protocol === 'smtp') {
+            $config['smtp_host']    = env('MAIL_HOST', 'smtp.office365.com');
+            $config['smtp_port']    = (int) env('MAIL_PORT', 587);
+            $config['smtp_user']    = $username;
+            $config['smtp_pass']    = $password;
+            $config['smtp_timeout'] = 30;
+            if (!empty($encryption)) {
+                $config['smtp_crypto'] = $encryption;
+            }
         }
 
         return $config;

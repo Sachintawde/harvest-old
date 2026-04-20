@@ -44,25 +44,28 @@ class ADMIN_Controller extends MY_Controller {
   public function send_mail($mail){
     $this->email->clear(TRUE);
 
+    $protocol   = env('MAIL_PROTOCOL', 'mail');
     $encryption = env('MAIL_ENCRYPTION', '');
 
     $smtp_cfg = array(
-        'protocol'     => 'smtp',
-        'smtp_host'    => env('MAIL_HOST',  'relay-hosting.secureserver.net'),
-        'smtp_port'    => (int) env('MAIL_PORT', 25),
-        'smtp_user'    => env('MAIL_USERNAME',   ''),
-        'smtp_pass'    => env('MAIL_PASSWORD',   ''),
+        'protocol'     => $protocol,
         'charset'      => 'utf-8',
         'mailtype'     => 'html',
         'wordwrap'     => TRUE,
         'priority'     => 1,
-        'smtp_timeout' => 30,
         'newline'      => "\r\n",
         'crlf'         => "\r\n",
     );
 
-    if (!empty($encryption)) {
-        $smtp_cfg['smtp_crypto'] = $encryption;
+    if ($protocol === 'smtp') {
+        $smtp_cfg['smtp_host']    = env('MAIL_HOST', 'smtp.office365.com');
+        $smtp_cfg['smtp_port']    = (int) env('MAIL_PORT', 587);
+        $smtp_cfg['smtp_user']    = env('MAIL_USERNAME', '');
+        $smtp_cfg['smtp_pass']    = env('MAIL_PASSWORD', '');
+        $smtp_cfg['smtp_timeout'] = 30;
+        if (!empty($encryption)) {
+            $smtp_cfg['smtp_crypto'] = $encryption;
+        }
     }
 
     $this->email->initialize($smtp_cfg);

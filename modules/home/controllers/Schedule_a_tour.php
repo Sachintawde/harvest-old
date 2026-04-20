@@ -96,26 +96,29 @@ class Schedule_a_tour extends HOME_Controller
         $from   = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
         $admin  = env('ADMIN_MAIL_TO', 'info@harvestgreenmontessori.com');
 
-        $html .= '<div class="box"><h3>&#9312; SMTP Configuration</h3>';
+        $html .= '<div class="box"><h3>&#9312; Mail Configuration</h3>';
         $html .= '<table>'
-               . '<tr><td>Host</td><td>' . htmlspecialchars($cfg['smtp_host']) . '</td></tr>'
-               . '<tr><td>Port</td><td>' . $cfg['smtp_port'] . ' &mdash; ' . $port_status($cfg['smtp_host'], $cfg['smtp_port']) . '</td></tr>'
-               . '<tr><td>Crypto</td><td>' . htmlspecialchars($cfg['smtp_crypto']) . '</td></tr>'
-               . '<tr><td>Auth user</td><td>' . htmlspecialchars($cfg['smtp_user']) . '</td></tr>'
-               . '<tr><td>Auth pass</td><td>' . (empty($cfg['smtp_pass']) ? '<span class="fail">EMPTY</span>' : str_repeat('*', strlen($cfg['smtp_pass']))) . '</td></tr>'
-               . '<tr><td>From</td><td>' . htmlspecialchars($from) . '</td></tr>'
+               . '<tr><td>Protocol</td><td><strong>' . htmlspecialchars($cfg['protocol']) . '</strong></td></tr>';
+        if ($cfg['protocol'] === 'smtp') {
+            $html .= '<tr><td>Host</td><td>' . htmlspecialchars($cfg['smtp_host'] ?? '') . '</td></tr>'
+                   . '<tr><td>Port</td><td>' . ($cfg['smtp_port'] ?? '') . ' &mdash; ' . $port_status($cfg['smtp_host'] ?? '', $cfg['smtp_port'] ?? 25) . '</td></tr>'
+                   . '<tr><td>Crypto</td><td>' . htmlspecialchars($cfg['smtp_crypto'] ?? '') . '</td></tr>'
+                   . '<tr><td>Auth user</td><td>' . htmlspecialchars($cfg['smtp_user'] ?? '') . '</td></tr>'
+                   . '<tr><td>Auth pass</td><td>' . (empty($cfg['smtp_pass']) ? '<span class="fail">EMPTY</span>' : str_repeat('*', strlen($cfg['smtp_pass']))) . '</td></tr>';
+        }
+        $html .= '<tr><td>From</td><td>' . htmlspecialchars($from) . '</td></tr>'
                . '<tr><td>ADMIN_MAIL_TO</td><td>' . htmlspecialchars($admin) . '</td></tr>'
                . '</table>';
         $html .= '</div>';
 
         // ── Send test to admin ────────────────────────────────────────────────
         $html .= '<div class="box"><h3>&#9313; Test Send &rarr; Admin</h3>';
-        $do_send('Office 365 SMTP', $cfg, $from, $admin);
+        $do_send($cfg['protocol'] === 'smtp' ? 'SMTP' : 'PHP mail()', $cfg, $from, $admin);
         $html .= '</div>';
 
         // ── Env vars dump ─────────────────────────────────────────────────────
         $html .= '<div class="box"><h3>&#9314; Key Environment Variables</h3>';
-        $env_keys = ['APP_ENV', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_ENCRYPTION', 'MAIL_USERNAME', 'MAIL_FROM_ADDRESS', 'ADMIN_MAIL_TO'];
+        $env_keys = ['APP_ENV', 'MAIL_PROTOCOL', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_ENCRYPTION', 'MAIL_USERNAME', 'MAIL_FROM_ADDRESS', 'ADMIN_MAIL_TO'];
         $html .= '<table>';
         foreach ($env_keys as $k) {
             $v = getenv($k);

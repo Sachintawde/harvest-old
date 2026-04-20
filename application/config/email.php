@@ -12,23 +12,26 @@
 |--------------------------------------------------------------------------
 */
 
+$protocol   = getenv('MAIL_PROTOCOL')   ?: 'mail';
 $encryption = getenv('MAIL_ENCRYPTION') ?: '';
 
 $config = array(
-    'protocol'     => 'smtp',
-    'smtp_host'    => getenv('MAIL_HOST')       ?: 'relay-hosting.secureserver.net',
-    'smtp_port'    => (int)(getenv('MAIL_PORT') ?: 25),
-    'smtp_user'    => getenv('MAIL_USERNAME')   ?: '',
-    'smtp_pass'    => getenv('MAIL_PASSWORD')   ?: '',
+    'protocol'     => $protocol,
     'charset'      => 'utf-8',
     'mailtype'     => 'html',
     'wordwrap'     => TRUE,
     'priority'     => 1,
-    'smtp_timeout' => 30,
     'newline'      => "\r\n",
     'crlf'         => "\r\n",
 );
 
-if (!empty($encryption)) {
-    $config['smtp_crypto'] = $encryption;
+if ($protocol === 'smtp') {
+    $config['smtp_host']    = getenv('MAIL_HOST')     ?: 'smtp.office365.com';
+    $config['smtp_port']    = (int)(getenv('MAIL_PORT') ?: 587);
+    $config['smtp_user']    = getenv('MAIL_USERNAME') ?: '';
+    $config['smtp_pass']    = getenv('MAIL_PASSWORD') ?: '';
+    $config['smtp_timeout'] = 30;
+    if (!empty($encryption)) {
+        $config['smtp_crypto'] = $encryption;
+    }
 }
