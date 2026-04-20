@@ -44,11 +44,12 @@ class ADMIN_Controller extends MY_Controller {
   public function send_mail($mail){
     $this->email->clear(TRUE);
 
+    $encryption = env('MAIL_ENCRYPTION', '');
+
     $smtp_cfg = array(
         'protocol'     => 'smtp',
-        'smtp_host'    => env('MAIL_HOST',       'smtp.office365.com'),
-        'smtp_crypto'  => env('MAIL_ENCRYPTION', 'tls'),
-        'smtp_port'    => (int) env('MAIL_PORT', 587),
+        'smtp_host'    => env('MAIL_HOST',  'relay-hosting.secureserver.net'),
+        'smtp_port'    => (int) env('MAIL_PORT', 25),
         'smtp_user'    => env('MAIL_USERNAME',   ''),
         'smtp_pass'    => env('MAIL_PASSWORD',   ''),
         'charset'      => 'utf-8',
@@ -59,6 +60,11 @@ class ADMIN_Controller extends MY_Controller {
         'newline'      => "\r\n",
         'crlf'         => "\r\n",
     );
+
+    if (!empty($encryption)) {
+        $smtp_cfg['smtp_crypto'] = $encryption;
+    }
+
     $this->email->initialize($smtp_cfg);
 
     $from_mail = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');

@@ -49,23 +49,19 @@ class HOME_Controller extends MY_Controller {
     
 
     /**
-     * Single SMTP config using MAIL_* env keys — routes through Microsoft Outlook.
-     * Used by all email channels: admin notifications, applicant confirmations, etc.
+     * Single SMTP config using MAIL_* env keys.
+     * Supports both authenticated SMTP (Office 365) and unauthenticated relay (GoDaddy).
      */
     protected function _smtp_config()
     {
-        $username = env('MAIL_USERNAME', '');
-        $password = env('MAIL_PASSWORD', '');
+        $username   = env('MAIL_USERNAME', '');
+        $password   = env('MAIL_PASSWORD', '');
+        $encryption = env('MAIL_ENCRYPTION', '');
 
-        if (empty($username) || empty($password)) {
-            log_message('error', 'SMTP credentials missing. Set MAIL_USERNAME and MAIL_PASSWORD in env.' . ENVIRONMENT);
-        }
-
-        return array(
+        $config = array(
             'protocol'     => 'smtp',
-            'smtp_host'    => env('MAIL_HOST',       'smtp.office365.com'),
-            'smtp_crypto'  => env('MAIL_ENCRYPTION', 'tls'),
-            'smtp_port'    => (int) env('MAIL_PORT', 587),
+            'smtp_host'    => env('MAIL_HOST',  'relay-hosting.secureserver.net'),
+            'smtp_port'    => (int) env('MAIL_PORT', 25),
             'smtp_user'    => $username,
             'smtp_pass'    => $password,
             'charset'      => 'utf-8',
@@ -76,6 +72,13 @@ class HOME_Controller extends MY_Controller {
             'newline'      => "\r\n",
             'crlf'         => "\r\n",
         );
+
+        // Only set smtp_crypto when encryption is explicitly configured
+        if (!empty($encryption)) {
+            $config['smtp_crypto'] = $encryption;
+        }
+
+        return $config;
     }
 
     /**
