@@ -73,7 +73,7 @@ class Schedule_a_tour extends HOME_Controller
             return '<span class="fail">BLOCKED &mdash; ' . htmlspecialchars($errstr) . ' (' . $errno . ')</span>';
         };
 
-        // Helper: attempt actual SMTP send
+        // Helper: attempt actual send
         $do_send = function ($label, $cfg, $from_addr, $to_addr) use (&$html) {
             $this->email->clear(TRUE);
             $this->email->initialize($cfg);
@@ -81,7 +81,8 @@ class Schedule_a_tour extends HOME_Controller
             $this->email->to($to_addr);
             $this->email->subject('[TEST] ' . $label . ' — ' . date('Y-m-d H:i:s'));
             $this->email->message('<p>Diagnostic test via <strong>' . htmlspecialchars($label)
-                . '</strong> at ' . date('Y-m-d H:i:s') . '</p>');
+                . '</strong> at ' . date('Y-m-d H:i:s') . '</p><p>From: '
+                . htmlspecialchars($from_addr) . '<br>To: ' . htmlspecialchars($to_addr) . '</p>');
             if ($this->email->send()) {
                 $html .= '<p class="ok">&#10004; SENT &rarr; ' . htmlspecialchars($to_addr) . '</p>';
             } else {
@@ -91,7 +92,7 @@ class Schedule_a_tour extends HOME_Controller
             }
         };
 
-        // ── SMTP Config ───────────────────────────────────────────────────────
+        // ── Mail Config ───────────────────────────────────────────────────────
         $cfg    = $this->_smtp_config();
         $from   = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
         $admin  = env('ADMIN_MAIL_TO', 'info@harvestgreenmontessori.com');
@@ -104,20 +105,47 @@ class Schedule_a_tour extends HOME_Controller
                    . '<tr><td>Port</td><td>' . ($cfg['smtp_port'] ?? '') . ' &mdash; ' . $port_status($cfg['smtp_host'] ?? '', $cfg['smtp_port'] ?? 25) . '</td></tr>'
                    . '<tr><td>Crypto</td><td>' . htmlspecialchars($cfg['smtp_crypto'] ?? '') . '</td></tr>'
                    . '<tr><td>Auth user</td><td>' . htmlspecialchars($cfg['smtp_user'] ?? '') . '</td></tr>'
-                   . '<tr><td>Auth pass</td><td>' . (empty($cfg['smtp_pass']) ? '<span class="fail">EMPTY</span>' : str_repeat('*', strlen($cfg['smtp_pass']))) . '</td></tr>';
+                   . '<tr><td>Auth pass</td><td>' . (empty($cfg['smtp_pass']) ? '<span class="warn">EMPTY (no auth)</span>' : str_repeat('*', strlen($cfg['smtp_pass']))) . '</td></tr>';
+        } elseif ($cfg['protocol'] === 'sendmail') {
+            $html .= '<tr><td>Mailpath</td><td>' . htmlspecialchars($cfg['mailpath'] ?? '/usr/sbin/sendmail') . '</td></tr>';
         }
         $html .= '<tr><td>From</td><td>' . htmlspecialchars($from) . '</td></tr>'
                . '<tr><td>ADMIN_MAIL_TO</td><td>' . htmlspecialchars($admin) . '</td></tr>'
                . '</table>';
         $html .= '</div>';
 
-        // ── Send test to admin ────────────────────────────────────────────────
-        $html .= '<div class="box"><h3>&#9313; Test Send &rarr; Admin</h3>';
-        $do_send($cfg['protocol'] === 'smtp' ? 'SMTP' : 'PHP mail()', $cfg, $from, $admin);
+        // ── Test 1: Send to admin (info@) ─────────────────────────────────────
+        $html .= '<div class="box"><h3>&#9313; Test Send &rarr; Admin (' . htmlspecialchars($admin) . ')</h3>';
+        $do_send($cfg['protocol'], $cfg, $from, $admin);
         $html .= '</div>';
 
+        // ── Test 2: Send to ?to= param (optional external address) ────────────
+        $extra_to = $this->input->get('to');
+        if (!empty($extra_to) && filter_var($extra_to, FILTER_VALIDATE_EMAIL)) {
+            $html .= '<div class="box"><h3>&#9314; Test Send &rarr; External (' . htmlspecialchars($extra_to) . ')</h3>';
+            $do_send($cfg['protocol'], $cfg, $from, $extra_to);
+            $html .= '</div>';
+        } else {
+            $html .= '<div class="box"><h3>&#9314; Test Send &rarr; External</h3>'
+                   . '<p class="warn">Add <code>?to=you@gmail.com</code> to URL to test external delivery.</p></div>';
+        }
+
         // ── Env vars dump ─────────────────────────────────────────────────────
-        $html .= '<div class="box"><h3>&#9314; Key Environment Variables</h3>';
+        $html .= '<div class="box"><h3>&#9315
+
+        // ── Test 2: Send to ?to= param (optional external address) ────────────
+        $extra_to = $this->input->get('to');
+        if (!empty($extra_to) && filter_var($extra_to, FILTER_VALIDATE_EMAIL)) {
+            $html .= '<div class="box"><h3>&#9314; Test Send &rarr; External (' . htmlspecialchars($extra_to) . ')</h3>';
+            $do_send($cfg['protocol'], $cfg, $from, $extra_to);
+            $html .= '</div>';
+        } else {
+            $html .= '<div class="box"><h3>&#9314; Test Send &rarr; External</h3>'
+                   . '<p class="warn">Add <code>?to=you@gmail.com</code> to URL to test external delivery.</p></div>';
+        }
+
+        // ── Env vars dump ─────────────────────────────────────────────────────
+        $html .= '<div class="box"><h3>&#9315; Key Environment Variables</h3>';
         $env_keys = ['APP_ENV', 'MAIL_PROTOCOL', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_ENCRYPTION', 'MAIL_USERNAME', 'MAIL_FROM_ADDRESS', 'ADMIN_MAIL_TO'];
         $html .= '<table>';
         foreach ($env_keys as $k) {
