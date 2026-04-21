@@ -1,7 +1,7 @@
 # Why Emails Are Not Being Received — `info@harvestgreenmontessori.com`
 
 **Date:** April 21, 2026  
-**Last Updated:** April 21, 2026 — Live SMTP config fixed (see [Fix Applied](#fix-applied))  
+**Last Updated:** April 21, 2026 — Live test run: port 587 BLOCKED on GoDaddy server (see [Live Server Test Results](#smtp-test-results))  
 **Application:** Harvest Green Montessori School (CodeIgniter 3)  
 **Recipient address:** `info@harvestgreenmontessori.com`  
 **Mailbox provider:** Microsoft 365 (Office 365)
@@ -67,6 +67,31 @@ GoDaddy shared hosting intentionally blocks outbound connections on port 25 from
 `MAIL_ENCRYPTION` was blank in `env.live`. Emails were submitted to the local relay in plain text. Microsoft 365 enforces TLS on inbound connections from unknown relays, causing the message to be refused or silently discarded.
 
 **Fix applied:** `MAIL_ENCRYPTION=tls` set in `env.live`.
+
+### 16. GoDaddy Blocks Outbound Port 587 on Live Server — **NEW CRITICAL FINDING**
+
+**Confirmed by live diagnostic test on April 21, 2026.**
+
+After switching `env.live` to `smtp.office365.com:587`, the live server test showed:
+
+```
+Port 587 — BLOCKED — Connection timed out (110)
+✘ FAILED → info@harvestgreenmontessori.com
+The following SMTP error was encountered: 110 Connection timed out
+```
+
+GoDaddy shared hosting firewalls outbound TCP connections on **both port 25 and port 587** from PHP processes. This is a server-level network restriction that cannot be worked around by changing credentials or encryption settings. The TCP connection never reaches Microsoft 365's servers — it times out after ~6 seconds.
+
+**This is the root cause of email delivery failure on the live server.**
+
+**Solutions (in order of recommended priority):**
+
+1. **Use GoDaddy's own SMTP relay** — GoDaddy allows outbound connections to their own relay from within shared hosting. Use `relay-hosting.secureserver.net` on port 25 (no credentials needed from within GoDaddy). This is the simplest fix but requires no authentication, meaning SPF/DKIM must be correctly configured.
+2. **Use port 465 (SSL) instead of 587** — Some GoDaddy plans allow outbound port 465. Worth testing before escalating.
+3. **Contact GoDaddy support** and request that outbound port 587 be unblocked for the hosting account. This may not be possible on all shared hosting tiers.
+4. **Switch to a transactional email API** (SendGrid, Mailgun, AWS SES) that communicates over HTTPS (port 443) instead of raw SMTP — port 443 is never blocked.
+
+---
 
 ### 4. Email is Sent from the Same Address It Is Delivered To
 
@@ -181,7 +206,7 @@ Both `MAIL_FROM_ADDRESS` and `ADMIN_MAIL_TO` are set to `info@harvestgreenmontes
 
 | # | Environment | Cause | Severity | Status |
 |---|---|---|---|---|
-| 1 | Live | GoDaddy blocks outbound port 25 | **Critical** | ✅ Fixed |
+| 1 | Live | GoDaddy blocks outbound port 25 | **Critical** | ✅ Fixed (changed host) |
 | 2 | Live | No SMTP username/password | **Critical** | ✅ Fixed |
 | 3 | Live | No TLS encryption, relay sends plain text | High | ✅ Fixed |
 | 4 | Both | From/To same address; not authenticated via Microsoft — looks like spoofing | High | ⚠️ Pending |
@@ -196,12 +221,15 @@ Both `MAIL_FROM_ADDRESS` and `ADMIN_MAIL_TO` are set to `info@harvestgreenmontes
 | 13 | Both | DMARC policy absent | Medium | ⚠️ Pending |
 | 14 | Live | `APP_DEBUG=false` hides all SMTP errors silently | High | ⚠️ Pending |
 | 15 | Both | Mailbox-level issue (full, disabled, rules) | Medium | ⚠️ Pending |
+| **16** | **Live** | **GoDaddy blocks outbound port 587 — TCP connection times out** | **🔴 Critical** | **❌ Unresolved** |
 
 ---
 
 ## SMTP Test Results
 
-**Test run:** April 21, 2026 at 11:08:09 (local server time)  
+### Test 1 — Local Server (Windows)
+
+**Test run:** April 21, 2026 at 11:08:09  
 **Endpoint:** `http://harvest.com/schedule_a_tour/test_mail`  
 **Result: ✅ Email successfully sent**
 
@@ -221,7 +249,39 @@ Both `MAIL_FROM_ADDRESS` and `ADMIN_MAIL_TO` are set to `info@harvestgreenmontes
 | Auth pass | Set (15 chars) |
 | Test send → `info@harvestgreenmontessori.com` | ✅ **SENT** (accepted by Microsoft 365) |
 
-> **Important:** "SENT" means Microsoft 365's SMTP gateway accepted the message. It does **not** guarantee the email arrived in the inbox — it may still be in the Junk/Spam folder. Check the inbox and junk folder for `info@harvestgreenmontessori.com`.
+> **Note:** "SENT" means Microsoft 365's SMTP gateway accepted the message. Check inbox and Junk folder for `info@harvestgreenmontessori.com`.
+
+---
+
+### Test 2 — Live Server (GoDaddy / Linux)
+
+**Test run:** April 21, 2026 at 11:16:06  
+**Endpoint:** `https://harvestgreenmontessori.com/schedule_a_tour/test_mail`  
+**Result: ❌ FAILED — Port 587 blocked by GoDaddy firewall**
+
+| Check | Result |
+|---|---|
+| Environment | `live` (env.live) |
+| PHP version | 8.1.34 (Linux) |
+| OpenSSL | 1.1.1w (11 Sep 2023) |
+| `cacert.pem` | ✅ Found — 226,168 bytes |
+| Email class | `MY_Email` (Linux uses native CI SMTP path) |
+| `fsockopen()` | ✅ Available |
+| `stream_socket_client()` | ✅ Available |
+| SMTP host | `smtp.office365.com` |
+| Port 587 | ❌ **BLOCKED — Connection timed out (errno 110)** |
+| Encryption | `tls` (STARTTLS) |
+| Auth user | `info@harvestgreenmontessori.com` |
+| Auth pass | Set (15 chars) |
+| Test send → `info@harvestgreenmontessori.com` | ❌ **FAILED** — `110 Connection timed out` |
+
+**Error message from server:**
+```
+The following SMTP error was encountered: 110 Connection timed out
+Unable to send email using PHP SMTP. Your server might not be configured to send mail using this method.
+```
+
+**Root cause confirmed:** GoDaddy's shared hosting firewall blocks all outbound TCP connections on port 587. The TCP socket never connects to `smtp.office365.com` — it times out after ~6 seconds. This is a network-level block, not an authentication or configuration issue. Changing credentials or encryption will not fix this.
 
 ---
 
@@ -229,7 +289,7 @@ Both `MAIL_FROM_ADDRESS` and `ADMIN_MAIL_TO` are set to `info@harvestgreenmontes
 
 **Date:** April 21, 2026
 
-`env.live` has been updated to use Microsoft 365 SMTP directly, identical to the local environment:
+`env.live` updated from `localhost:25` to `smtp.office365.com:587` with TLS and credentials. Issues #1, #2, and #3 resolved. **However, live server test confirmed port 587 is blocked by GoDaddy (Issue #16), so email still fails on production.**
 
 ```dotenv
 MAIL_PROTOCOL=smtp
@@ -240,18 +300,47 @@ MAIL_PASSWORD=Saibaba0987612$
 MAIL_ENCRYPTION=tls
 ```
 
-Issues #1, #2, and #3 (the primary causes of email delivery failure on the live server) are now resolved.
-
 ---
 
 ## Remaining Action Items
 
-The following items still need to be verified or actioned in the Microsoft 365 Admin Center and DNS settings:
+### 🔴 Priority 1 — Fix Live Server SMTP (Port Blocked)
+
+Choose one of these options to resolve Issue #16:
+
+**Option A — Use GoDaddy's SMTP relay (quickest, no credentials needed):**
+```dotenv
+MAIL_PROTOCOL=smtp
+MAIL_HOST=relay-hosting.secureserver.net
+MAIL_PORT=25
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=
+```
+GoDaddy allows outbound connections to their own relay from within shared hosting. No authentication is required because the connection originates from within GoDaddy's network.
+
+**Option B — Try port 465 (SSL) with Microsoft 365:**
+```dotenv
+MAIL_HOST=smtp.office365.com
+MAIL_PORT=465
+MAIL_ENCRYPTION=ssl
+```
+Run the test_mail diagnostic again to verify port 465 is open.
+
+**Option C — Switch to a transactional API (best long-term):**  
+Services like SendGrid, Mailgun, or AWS SES communicate over HTTPS (port 443), which is never blocked. Free tiers are available.
+
+---
+
+### ⚠️ Priority 2 — Microsoft 365 Configuration
 
 1. **Enable SMTP AUTH for the mailbox** — Microsoft 365 Admin Center → Users → Active Users → `info@harvestgreenmontessori.com` → Mail → Manage email apps → ensure **Authenticated SMTP** is checked ON.
 2. **Enable SMTP AUTH at tenant level** — Exchange Admin Center → Settings → Org Settings → confirm SMTP AUTH is not globally disabled.
-3. **Check MFA / Conditional Access** — If MFA is enforced on the account, either generate an App Password or create a Conditional Access exclusion for SMTP AUTH.
+3. **Check MFA / Conditional Access** — If MFA is enforced on the account, generate an App Password or create a Conditional Access exclusion for SMTP AUTH.
+
+### ⚠️ Priority 3 — DNS / Email Authentication
+
 4. **Verify SPF record** includes `include:spf.protection.outlook.com`.
 5. **Enable DKIM** — Microsoft 365 Admin Center → Security → DKIM → enable for `harvestgreenmontessori.com`.
 6. **Add DMARC record** — Add `v=DMARC1; p=none; rua=mailto:info@harvestgreenmontessori.com` as a DNS TXT record at `_dmarc.harvestgreenmontessori.com`.
-7. **Check Junk folder** — After sending a test email, check the Junk/Spam folder in the `info@harvestgreenmontessori.com` mailbox.
+7. **Check Junk folder** — After a successful send, check the Junk/Spam folder in the `info@harvestgreenmontessori.com` mailbox.
