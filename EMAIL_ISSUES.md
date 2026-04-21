@@ -1,7 +1,7 @@
 # Why Emails Are Not Being Received — `info@harvestgreenmontessori.com`
 
 **Date:** April 21, 2026  
-**Last Updated:** April 21, 2026 — Live test run: port 587 BLOCKED on GoDaddy server (see [Live Server Test Results](#smtp-test-results))  
+**Last Updated:** April 21, 2026 — Mail sending confirmed working via `mail()`. Emails not received in `info@` inbox — Microsoft 365 spam/junk filtering is the active issue.  
 **Application:** Harvest Green Montessori School (CodeIgniter 3)  
 **Recipient address:** `info@harvestgreenmontessori.com`  
 **Mailbox provider:** Microsoft 365 (Office 365)
@@ -253,7 +253,7 @@ Both `MAIL_FROM_ADDRESS` and `ADMIN_MAIL_TO` are set to `info@harvestgreenmontes
 
 ---
 
-### Test 2 — Live Server (GoDaddy / Linux)
+### Test 2 — Live Server (GoDaddy / Linux) — SMTP port 587 attempt
 
 **Test run:** April 21, 2026 at 11:16:06  
 **Endpoint:** `https://harvestgreenmontessori.com/schedule_a_tour/test_mail`  
@@ -275,72 +275,96 @@ Both `MAIL_FROM_ADDRESS` and `ADMIN_MAIL_TO` are set to `info@harvestgreenmontes
 | Auth pass | Set (15 chars) |
 | Test send → `info@harvestgreenmontessori.com` | ❌ **FAILED** — `110 Connection timed out` |
 
-**Error message from server:**
-```
-The following SMTP error was encountered: 110 Connection timed out
-Unable to send email using PHP SMTP. Your server might not be configured to send mail using this method.
-```
+**Root cause confirmed:** GoDaddy's shared hosting firewall blocks all outbound TCP connections on port 587. Changing credentials or encryption will not fix this.
 
-**Root cause confirmed:** GoDaddy's shared hosting firewall blocks all outbound TCP connections on port 587. The TCP socket never connects to `smtp.office365.com` — it times out after ~6 seconds. This is a network-level block, not an authentication or configuration issue. Changing credentials or encryption will not fix this.
+---
+
+### Test 3 — Live Server (GoDaddy / Linux) — PHP `mail()` method ✅
+
+**Test run:** April 21, 2026 at 11:30:46  
+**Protocol switched to:** `MAIL_PROTOCOL=mail` (PHP native `mail()` via GoDaddy sendmail)  
+**Result: ✅ Both sends accepted by server — but `info@` not received in inbox**
+
+| Check | Result |
+|---|---|
+| Environment | `live` (env.live) |
+| PHP version | 8.1.34 (Linux) |
+| Protocol | `mail` (PHP native) |
+| Test send → `info@harvestgreenmontessori.com` | ✅ **SENT** (accepted by server) |
+| Test send → `sachintawde548@gmail.com` | ✅ **SENT** (accepted by server) |
+| Received at `sachintawde548@gmail.com` | ✅ **Yes — email arrived** |
+| Received at `info@harvestgreenmontessori.com` | ❌ **No — not in inbox** |
+
+**New root cause confirmed:** The sending pipeline is working. GoDaddy's `mail()` successfully hands messages to its outbound mail server. The Gmail address received the email. The `info@harvestgreenmontessori.com` Microsoft 365 mailbox is **not receiving it** — the email is being silently filtered, rejected, or quarantined by Microsoft 365 on the receiving end.
 
 ---
 
 ## Fix Applied
 
-**Date:** April 21, 2026
+**April 21, 2026 — Step 1:** `env.live` updated from `localhost:25` to `smtp.office365.com:587` with TLS — issues #1, #2, #3 resolved but port 587 was blocked by GoDaddy.
 
-`env.live` updated from `localhost:25` to `smtp.office365.com:587` with TLS and credentials. Issues #1, #2, and #3 resolved. **However, live server test confirmed port 587 is blocked by GoDaddy (Issue #16), so email still fails on production.**
+**April 21, 2026 — Step 2:** Switched to `MAIL_PROTOCOL=mail` (PHP native `mail()`). Live test confirmed emails are now successfully sent and received on Gmail. The `info@harvestgreenmontessori.com` Microsoft 365 mailbox is the remaining problem — it is silently filtering/blocking the incoming messages.
 
+Current `env.live` mail config:
 ```dotenv
-MAIL_PROTOCOL=smtp
-MAIL_HOST=smtp.office365.com
-MAIL_PORT=587
-MAIL_USERNAME=info@harvestgreenmontessori.com
-MAIL_PASSWORD=Saibaba0987612$
-MAIL_ENCRYPTION=tls
+MAIL_PROTOCOL=mail
+MAIL_HOST=
+MAIL_PORT=
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=
+MAIL_FROM_ADDRESS=info@harvestgreenmontessori.com
+ADMIN_MAIL_TO=info@harvestgreenmontessori.com
 ```
 
 ---
 
 ## Remaining Action Items
 
-### 🔴 Priority 1 — Fix Live Server SMTP (Port Blocked)
+### 🔴 Priority 1 — Fix Microsoft 365 Inbox Delivery (Active Issue)
 
-Choose one of these options to resolve Issue #16:
+Sending works. The email is being blocked or filtered by Microsoft 365 before it reaches the inbox. Work through these steps in order:
 
-**Option A — Use GoDaddy's SMTP relay (quickest, no credentials needed):**
-```dotenv
-MAIL_PROTOCOL=smtp
-MAIL_HOST=relay-hosting.secureserver.net
-MAIL_PORT=25
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_ENCRYPTION=
+**Step 1 — Check Junk / Spam folder immediately**  
+Log in to `info@harvestgreenmontessori.com` (Outlook Web App or Outlook desktop) and check the **Junk Email** folder. If the test emails are there, the problem is spam classification — proceed to Step 2.
+
+**Step 2 — Check Microsoft 365 Quarantine**  
+If not in Junk, check the quarantine: Microsoft 365 Defender portal → **Review → Quarantine**. Search for messages from `info@harvestgreenmontessori.com`. If found, release them and whitelist the sender.
+
+**Step 3 — Check SPF record**  
+GoDaddy's `mail()` sends from GoDaddy's outbound mail server IP. If GoDaddy's IP is not in the SPF record for `harvestgreenmontessori.com`, Microsoft 365 will treat incoming messages as spoofed and either spam-folder or reject them.
+
+Check current SPF:
 ```
-GoDaddy allows outbound connections to their own relay from within shared hosting. No authentication is required because the connection originates from within GoDaddy's network.
-
-**Option B — Try port 465 (SSL) with Microsoft 365:**
-```dotenv
-MAIL_HOST=smtp.office365.com
-MAIL_PORT=465
-MAIL_ENCRYPTION=ssl
+nslookup -type=TXT harvestgreenmontessori.com
 ```
-Run the test_mail diagnostic again to verify port 465 is open.
+The SPF record must include GoDaddy's mail servers. A typical GoDaddy SPF entry:
+```
+v=spf1 include:secureserver.net include:spf.protection.outlook.com ~all
+```
 
-**Option C — Switch to a transactional API (best long-term):**  
-Services like SendGrid, Mailgun, or AWS SES communicate over HTTPS (port 443), which is never blocked. Free tiers are available.
+**Step 4 — Enable DKIM in Microsoft 365**  
+Microsoft 365 Admin Center → Security → Email Authentication → DKIM → enable for `harvestgreenmontessori.com`.
+
+**Step 5 — Add DMARC DNS record**  
+Add a TXT record at `_dmarc.harvestgreenmontessori.com`:
+```
+v=DMARC1; p=none; rua=mailto:info@harvestgreenmontessori.com
+```
+
+**Step 6 — Check Microsoft 365 mail flow rules**  
+Exchange Admin Center → Mail flow → Rules. Verify no rule is deleting or redirecting incoming messages to `info@harvestgreenmontessori.com`.
+
+**Step 7 — Check inbox rules in Outlook**  
+Log into Outlook Web App → Settings → View all Outlook settings → Mail → Rules. Delete any rules that move or delete incoming messages.
 
 ---
 
-### ⚠️ Priority 2 — Microsoft 365 Configuration
+### ✅ Resolved Issues
 
-1. **Enable SMTP AUTH for the mailbox** — Microsoft 365 Admin Center → Users → Active Users → `info@harvestgreenmontessori.com` → Mail → Manage email apps → ensure **Authenticated SMTP** is checked ON.
-2. **Enable SMTP AUTH at tenant level** — Exchange Admin Center → Settings → Org Settings → confirm SMTP AUTH is not globally disabled.
-3. **Check MFA / Conditional Access** — If MFA is enforced on the account, generate an App Password or create a Conditional Access exclusion for SMTP AUTH.
-
-### ⚠️ Priority 3 — DNS / Email Authentication
-
-4. **Verify SPF record** includes `include:spf.protection.outlook.com`.
-5. **Enable DKIM** — Microsoft 365 Admin Center → Security → DKIM → enable for `harvestgreenmontessori.com`.
-6. **Add DMARC record** — Add `v=DMARC1; p=none; rua=mailto:info@harvestgreenmontessori.com` as a DNS TXT record at `_dmarc.harvestgreenmontessori.com`.
-7. **Check Junk folder** — After a successful send, check the Junk/Spam folder in the `info@harvestgreenmontessori.com` mailbox.
+| # | Cause | Fix |
+|---|---|---|
+| 1 | GoDaddy blocks port 25 | Changed MAIL_HOST away from localhost |
+| 2 | No SMTP credentials on live | Added credentials |
+| 3 | No TLS on live | Added MAIL_ENCRYPTION=tls |
+| 16 | GoDaddy blocks port 587 | Switched to MAIL_PROTOCOL=mail |
