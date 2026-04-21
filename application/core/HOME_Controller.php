@@ -109,7 +109,7 @@ class HOME_Controller extends MY_Controller {
         $this->email->from($from_address, $from_name);
         $this->email->reply_to($from_address, $from_name);
         $this->email->to($admin_to);
-        $this->email->cc('Harvestgreenmontessori4100@gmail.com');
+        $this->email->cc(['Harvestgreenmontessori4100@gmail.com', 'info@harvestgreenmontessori.com']);
         $this->email->subject($mail['sub']);
         $this->email->message($mail['body']);
 
