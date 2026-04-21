@@ -243,8 +243,6 @@ if ($this->session->flashdata('error')) {
                     </div>
                 </div>
 
-                <p class="tour-disclaimer">A parent or guardian must be present during the tour. Tours are offered on weekdays only. Our team will confirm your appointment within 24 hours.</p>
-
                 <!-- Comment -->
                 <div class="tour-field" style="margin-top:18px;">
                     <label class="tour-form-label">Your Comment (Optional)</label>
