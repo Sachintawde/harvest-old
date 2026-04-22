@@ -26,58 +26,26 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h2>Tour Confirmed!</h2>
-            <p>Harvest Green Montessori School</p>
+        <input type="hidden" name="phone" value="<?= htmlspecialchars($phone) ?>">
+        <h2><?= htmlspecialchars($title) ?></h2>
+        <p>Greetings <strong><?= htmlspecialchars($name) ?></strong>,</p>
+        <p>Thank you for your interest in <?= htmlspecialchars($address) ?>! I am looking forward to meeting you during your visit and providing you with a tour of our facility on <a href="https://harvestgreenmontessori.com/Schedule_a_tour/tourdetails/<?= urlencode($tour_id) ?>" target="_blank">View Your Booked Tour</a>.</p>
+        <p>If you need to change the date or time of your tour, please contact us today or visit our website to make any changes.</p>
+        <p>You may click on our website link to learn more: <a href="https://harvestgreenmontessori.com/">www.harvestgreenmontessori.com</a>. Please do not hesitate to call if you have any questions! We are conveniently located next door to James Neil Elementary school.</p>
+        <p>We can't wait to show you what a difference our Montessori school will be for your child!</p>
+        <p><strong>Warm regards,</strong></p>
+        <p>
+            <strong>Lorena Corral</strong> - Director<br>
+            Harvest Green Montessori School<br>
+            4100 Harvest Corner Drive<br>
+            Richmond, Texas 77406<br>
+            Phone: <a href="tel:2818197529">281-819-7529</a><br>
+            <a href="https://harvestgreenmontessori.com/">www.harvestgreenmontessori.com</a>
+        </p>
+        <div class="footer">
+            <p>"Free the child's potential, and you will transform him into the world." - Maria Montessori</p>
         </div>
-
-        <div class="content">
-            <p>Dear <strong><?= htmlspecialchars($name) ?></strong>,</p>
-            <p>Thank you for scheduling a tour with us! We are excited to show you our school and look forward to meeting you and your family.</p>
-
-            <div class="booking-card">
-                <h3>&#128197; Your Tour Details</h3>
-                <div class="booking-row">
-                    <span class="bk-label">Date</span>
-                    <span class="bk-value"><?= htmlspecialchars($tour_date) ?></span>
-                </div>
-                <div class="booking-row">
-                    <span class="bk-label">Time</span>
-                    <span class="bk-value"><?= htmlspecialchars($tour_time) ?></span>
-                </div>
-                <div class="booking-row">
-                    <span class="bk-label">Location</span>
-                    <span class="bk-value">4100 Harvest Corner Drive, Richmond TX 77406</span>
-                </div>
-                <?php if (!empty($tour_program)): ?>
-                <div class="booking-row">
-                    <span class="bk-label">Program</span>
-                    <span class="bk-value"><?= htmlspecialchars($tour_program) ?></span>
-                </div>
-                <?php endif; ?>
-            </div>
-
-            <p style="text-align:center">
-                <a href="<?= base_url('Schedule_a_tour/tourdetails/') . urlencode($tour_id) ?>" class="view-btn" target="_blank">View Your Tour Details</a>
-            </p>
-
-            <hr class="divider">
-
-            <p>A parent or guardian must be present during the tour. Our team will reach out to confirm your appointment within 24 hours. If you need to reschedule, please contact us as soon as possible.</p>
-
-            <p>We can't wait to show you what a difference a Montessori education will make for your child!</p>
-
-            <div class="footer-sig">
-                <p><strong>Warm regards,</strong></p>
-                <p>
-                    <strong>Lorena Corral</strong> — Director<br>
-                    Harvest Green Montessori School<br>
-                    4100 Harvest Corner Drive, Richmond, Texas 77406<br>
-                    Phone: <a href="tel:2818197529">281-819-7529</a><br>
-                    <a href="https://www.harvestgreenmontessori.com">www.harvestgreenmontessori.com</a>
-                </p>
-            </div>
-        </div>
+    </div>
 
         <div class="email-footer">
             <p>"Free the child's potential, and you will transform him into the world." &mdash; Maria Montessori</p>
