@@ -304,7 +304,7 @@
                     <div class="ci-row">
                         <div class="ci-icon"><i class="fa fa-clock-o"></i></div>
                         <div class="ci-body">
-                            Mon &ndash; Fri: 7:00 AM &ndash; 6:30 PM
+                            Mon &ndash; Fri: 6:30 AM &ndash; 6:30 PM
                         </div>
                     </div>
                     <div class="ci-row">
