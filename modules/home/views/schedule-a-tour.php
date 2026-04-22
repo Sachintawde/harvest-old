@@ -249,8 +249,6 @@ if ($this->session->flashdata('error')) {
                     <textarea name="t_other_notes" class="tour-form-control" placeholder="Anything else we should know?"><?= htmlspecialchars($fd['t_other_notes'] ?? '') ?></textarea>
                 </div>
 
-                <!-- reCAPTCHA -->
-                <div class="g-recaptcha mt-3" data-sitekey="<?= getenv('RECAPTCHA_SITE_KEY_TOUR') ?>"></div>
 
                 <button type="submit" class="tour-submit-btn">Submit tour request</button>
             </form>

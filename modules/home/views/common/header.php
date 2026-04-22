@@ -27,8 +27,6 @@
 
 	<!-- Modernizer js -->
 	<script src="<?= base_url(); ?>assets/home/js/vendor/modernizr-3.5.0.min.js"></script>
-	<!-- captcha link  -->
-	<script src='https://www.google.com/recaptcha/api.js'></script>
 
 	<!-- Google Tag Manager (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NP5VYB4CZ9"></script>

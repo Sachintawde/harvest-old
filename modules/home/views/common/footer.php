@@ -107,8 +107,6 @@
 	<script src="<?= base_url(); ?>assets/home/js/popper.min.js"></script>
 
 	<script src="<?= base_url(); ?>assets/home/js/bootstrap.min.js"></script>
-	<!-- captcha link  -->
-	<script src='https://www.google.com/recaptcha/api.js'></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="<?= base_url(); ?>assets/home/js/accordion.js"></script>
 	<script src="<?= base_url(); ?>assets/home/js/plugins.js"></script>

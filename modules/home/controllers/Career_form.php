@@ -56,27 +56,6 @@ class Career_form extends HOME_Controller {
 
 
 
-            // Verify reCAPTCHA
-
-            $recaptchaResponse = $post_data['g-recaptcha-response'];
-
-            $secretKey = getenv('RECAPTCHA_SECRET_KEY_CAREER');
-
-            $recaptchaUrl = "https://www.google.com/recaptcha/api/siteverify?secret={$secretKey}&response={$recaptchaResponse}";
-
-            $recaptchaData = json_decode(file_get_contents($recaptchaUrl));
-
-         
-
-            if (!$recaptchaData->success) {
-
-                // reCAPTCHA verification failed
-
-                $this->session->set_flashdata('post_data', $_POST);
-
-                $this->session->set_flashdata('msg', 'Please complete the reCAPTCHA verification.');
-
-                $this->session->set_flashdata('head', 'Error');
 
                 $this->session->set_flashdata('class', 'danger');
 

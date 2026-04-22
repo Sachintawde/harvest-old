@@ -201,44 +201,6 @@ class Schedule_a_tour extends HOME_Controller
             't_referral_name'        => '',
         ];
     
-        // Verify reCAPTCHA
-        $recaptchaResponse = isset($post_data['g-recaptcha-response']) ? trim($post_data['g-recaptcha-response']) : '';
-        $secretKey         = getenv('RECAPTCHA_SECRET_KEY_TOUR');
-
-        if (empty($recaptchaResponse)) {
-            $this->session->set_flashdata('post_data', $_POST);
-            $this->session->set_flashdata('msg', 'Please complete the reCAPTCHA verification.');
-            $this->session->set_flashdata('head', 'Error');
-            $this->session->set_flashdata('class', 'danger');
-            redirect($_SERVER['HTTP_REFERER']);
-            return;
-        }
-
-        $ch = curl_init('https://www.google.com/recaptcha/api/siteverify');
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['secret' => $secretKey, 'response' => $recaptchaResponse]));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $recaptchaResult = curl_exec($ch);
-        $curlError       = curl_error($ch);
-        curl_close($ch);
-
-        if ($recaptchaResult === false) {
-            log_message('error', 'reCAPTCHA cURL error: ' . $curlError);
-            // Fail open only if cURL itself failed (network issue on server side)
-            // Comment this block out to enforce reCAPTCHA strictly
-        } else {
-            $recaptchaData = json_decode($recaptchaResult);
-            if (empty($recaptchaData->success)) {
-                $this->session->set_flashdata('post_data', $_POST);
-                $this->session->set_flashdata('msg', 'reCAPTCHA verification failed. Please try again.');
-                $this->session->set_flashdata('head', 'Error');
-                $this->session->set_flashdata('class', 'danger');
-                redirect($_SERVER['HTTP_REFERER']);
-                return;
-            }
-        }
     
         // Process Signature
         $t_signature = $this->input->post('t_signature');
