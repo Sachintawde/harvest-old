@@ -1,10 +1,19 @@
-# Environment Configuration Files
+# Environment Configuration Files (dot-prefix style)
 .env
 .env.local
 .env.development
 .env.live
 .env.production
 .env.staging
+
+# Environment Configuration Files (no-dot style — Windows-friendly)
+env.local
+env.live
+env.development
+env.production
+env.staging
+# Keep env.example as it has no real credentials
+!env.example
 
 # CodeIgniter Specific
 application/cache/*
