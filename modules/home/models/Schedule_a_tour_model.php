@@ -15,14 +15,17 @@ class Schedule_a_tour_model extends CI_Model
 
             't_start_date_field' => $row['t_start_date_field'],
 
-            't_time_slot' => $row['t_time_slot']
+            't_time_slot'        => $row['t_time_slot'],
+
+            't_status'           => 1,   // only count active (non-deleted) bookings
 
         );
 
         $check_slot = $this->db->get_where('tour', $where1)->num_rows();
         $where2 = array(
             't_start_date_field' => $row['t_start_date_field'],
-            't_mother_phone'     => $row['t_mother_phone']
+            't_mother_phone'     => $row['t_mother_phone'],
+            't_status'           => 1,   // only count active bookings
         );
 
         $check_mob = $this->db->get_where('tour', $where2)->num_rows();
@@ -106,7 +109,24 @@ class Schedule_a_tour_model extends CI_Model
 
     public function get_tour_by_t_id($t_id)
     {
-        return $this->db->get_where('tour', ['t_id' => $t_id])->row_array();
+        return $this->db->get_where('tour', ['t_id' => $t_id, 't_status' => 1])->row_array();
+    }
+
+    /**
+     * Return all booked time slots for a given date (active bookings only).
+     * Used by the frontend to disable already-taken slots.
+     *
+     * @param  string $date  Format: mm/dd/yyyy
+     * @return string[]      Array of time slot strings
+     */
+    public function get_booked_slots_for_date($date)
+    {
+        $this->db->select('t_time_slot');
+        $this->db->from('tour');
+        $this->db->where('t_start_date_field', $date);
+        $this->db->where('t_status', 1);
+        $query = $this->db->get();
+        return array_column($query->result_array(), 't_time_slot');
     }
 }
 // model end here

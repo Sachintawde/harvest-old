@@ -308,8 +308,34 @@ class Schedule_a_tour extends HOME_Controller
 
 
 
-    public function get_school_closed_events()
+    /**
+     * Return already-booked time slots for a given date (AJAX, GET).
+     * Used by the frontend to disable taken slots dynamically.
+     * Request:  GET /Schedule_a_tour/get_booked_slots?date=04/24/2026
+     * Response: JSON array of slot strings, e.g. ["09:30AM-10:00AM","10:00AM-10:30AM"]
+     */
+    public function get_booked_slots()
     {
+        $date = $this->input->get('date');
+
+        if (empty($date)) {
+            echo json_encode([]);
+            return;
+        }
+
+        // Validate date format (mm/dd/yyyy)
+        if (!preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $date)) {
+            echo json_encode([]);
+            return;
+        }
+
+        $this->load->model('schedule_a_tour_model');
+        $slots = $this->schedule_a_tour_model->get_booked_slots_for_date($date);
+        log_message('debug', '[Schedule_a_tour] get_booked_slots for ' . $date . ': ' . json_encode($slots));
+        echo json_encode($slots);
+    }
+
+    public function get_school_closed_events()    {
         $this->db->select('event_start, event_end');
         $this->db->from('event');
         $this->db->where('event_type', 'School Closed');

@@ -313,11 +313,46 @@ document.addEventListener("DOMContentLoaded", function () {
             autoclose: true, todayHighlight: true,
             startDate: new Date(),
             beforeShowDay: function (d) { return !isDisabled(d); }
+        }).on('changeDate', function (e) {
+            // Reload available slots whenever the date changes
+            var selectedDate = $(this).val();
+            if (selectedDate) {
+                fetchBookedSlots(selectedDate);
+            }
         });
 
         $("#t_signature_date, #t_dob_1, #t_dob_2").datepicker({
             format: 'mm/dd/yyyy',
             autoclose: true, todayHighlight: true
+        });
+
+        // If a date is already pre-filled (form re-display after error), load slots now
+        var prefilledDate = $("#t_start_date_field").val();
+        if (prefilledDate) {
+            fetchBookedSlots(prefilledDate);
+        }
+    }
+
+    function fetchBookedSlots(date) {
+        $.ajax({
+            url: base_url + 'Schedule_a_tour/get_booked_slots',
+            type: 'get',
+            data: { date: date },
+            dataType: 'json',
+            success: function (bookedSlots) {
+                var $select = $('select[name="t_time_slot"]');
+                var currentVal = $select.val();
+                $select.find('option').each(function () {
+                    var val = $(this).val();
+                    if (val === '') return; // skip placeholder
+                    if (bookedSlots.indexOf(val) !== -1) {
+                        $(this).attr('disabled', 'disabled').text($(this).text().replace(' (Booked)', '') + ' (Booked)');
+                        if (currentVal === val) { $select.val(''); } // unselect if now booked
+                    } else {
+                        $(this).removeAttr('disabled').text($(this).text().replace(' (Booked)', ''));
+                    }
+                });
+            }
         });
     }
 
