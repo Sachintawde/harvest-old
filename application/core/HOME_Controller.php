@@ -49,49 +49,21 @@ class HOME_Controller extends MY_Controller {
     
 
     /**
-     * Single SMTP config using MAIL_* env keys.
-     * Supports both authenticated SMTP (Office 365) and unauthenticated relay (GoDaddy).
+     * Lazy-load the MsGraphMailer library (loaded once per request).
+     *
+     * @return MsGraphMailer
      */
-    protected function _smtp_config()
+    private function _mailer()
     {
-        $protocol   = env('MAIL_PROTOCOL', 'mail');
-        $username   = env('MAIL_USERNAME', '');
-        $password   = env('MAIL_PASSWORD', '');
-        $encryption = env('MAIL_ENCRYPTION', '');
-        $from_addr  = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-
-        $config = array(
-            'protocol'     => $protocol,
-            'charset'      => 'utf-8',
-            'mailtype'     => 'html',
-            'wordwrap'     => TRUE,
-            'priority'     => 1,
-            'newline'      => "\r\n",
-            'crlf'         => "\r\n",
-        );
-
-        if ($protocol === 'smtp') {
-            $config['smtp_host']    = env('MAIL_HOST', 'smtp.office365.com');
-            $config['smtp_port']    = (int) env('MAIL_PORT', 587);
-            $config['smtp_user']    = $username;
-            $config['smtp_pass']    = $password;
-            $config['smtp_timeout'] = 30;
-            if (!empty($encryption)) {
-                $config['smtp_crypto'] = $encryption;
-            }
-        } elseif ($protocol === 'sendmail') {
-            $config['mailpath'] = '/usr/sbin/sendmail -t -i -f ' . escapeshellarg($from_addr);
-        } elseif ($protocol === 'mail') {
-            // Set the envelope sender via the 5th mail() parameter
-            $config['mailpath'] = '/usr/sbin/sendmail';
+        if (!isset($this->msgraphmailer)) {
+            $this->load->library('MsGraphMailer');
         }
-
-        return $config;
+        return $this->msgraphmailer;
     }
 
     /**
-     * Send tour-details + ICS to the configured admin email address via Gmail SMTP.
-     * The recipient is always ADMIN_MAIL_TO from the env file — not hardcoded.
+     * Send admin notification email (tour details + optional ICS attachment).
+     * Recipient is always ADMIN_MAIL_TO from the env file.
      *
      * @param  array       $mail  ['sub' => ..., 'body' => ...]
      * @param  string|null $attachment  Absolute path to ICS file (optional)
@@ -99,93 +71,79 @@ class HOME_Controller extends MY_Controller {
      */
     public function send_admin_mail($mail, $attachment = null)
     {
-        $this->email->clear(TRUE);
-        $this->email->initialize($this->_smtp_config());
+        $admin_to = env('ADMIN_MAIL_TO', 'info@harvestgreenmontessori.com');
 
-        $from_address = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-        $from_name    = env('MAIL_FROM_NAME',    'Harvest Green Montessori School');
-        $admin_to     = env('ADMIN_MAIL_TO',     'info@harvestgreenmontessori.com');
-
-        $this->email->from($from_address, $from_name);
-        $this->email->reply_to($from_address, $from_name);
-        $this->email->to($admin_to);
-        $this->email->cc('info@harvestgreenmontessori.com');
-        $this->email->subject($mail['sub']);
-        $this->email->message($mail['body']);
+        $params = [
+            'to'      => $admin_to,
+            'subject' => $mail['sub'],
+            'body'    => $mail['body'],
+        ];
 
         if (!empty($attachment) && file_exists($attachment)) {
-            $this->email->attach($attachment);
+            $params['attachments'] = [$attachment];
         }
 
-        if ($this->email->send()) {
-            log_message('info', 'Admin email sent successfully to: ' . $admin_to);
-            return true;
+        $result = $this->_mailer()->send($params);
+
+        if ($result) {
+            log_message('info', '[HOME_Controller] Admin email sent to: ' . $admin_to);
         } else {
-            log_message('error', 'Admin email failed to [' . $admin_to . ']: ' . $this->email->print_debugger(['headers', 'subject', 'body']));
-            return false;
+            log_message('error', '[HOME_Controller] Admin email FAILED to: ' . $admin_to);
         }
+        return $result;
     }
 
     /**
-     * Send thank-you confirmation to the applicant (parent) via cPanel SMTP.
+     * Send thank-you confirmation email to the applicant (parent).
      *
      * @param  array $mail  ['adrs' => ..., 'sub' => ..., 'body' => ...]
      * @return bool
      */
     public function send_applicant_mail($mail)
     {
-        $this->email->clear(TRUE);
-        $this->email->initialize($this->_smtp_config());
+        $params = [
+            'to'      => $mail['adrs'],
+            'subject' => $mail['sub'],
+            'body'    => $mail['body'],
+        ];
 
-        $from_address = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-        $from_name    = env('MAIL_FROM_NAME',    'Harvest Green Montessori School');
+        $result = $this->_mailer()->send($params);
 
-        $this->email->from($from_address, $from_name);
-        $this->email->reply_to($from_address, $from_name);
-        $this->email->to($mail['adrs']);
-        $this->email->subject($mail['sub']);
-        $this->email->message($mail['body']);
-
-        if ($this->email->send()) {
-            log_message('info', 'Applicant email sent successfully to: ' . $mail['adrs']);
-            return true;
+        if ($result) {
+            log_message('info', '[HOME_Controller] Applicant email sent to: ' . $mail['adrs']);
         } else {
-            log_message('error', 'Applicant email failed to [' . $mail['adrs'] . ']: ' . $this->email->print_debugger(['headers', 'subject', 'body']));
-            return false;
+            log_message('error', '[HOME_Controller] Applicant email FAILED to: ' . $mail['adrs']);
         }
+        return $result;
     }
 
     /**
-     * Legacy send_mail — uses the single MAIL_* SMTP config with auto-CC to admin.
-     * Still used by reminder emails and other controllers that have not migrated.
+     * General-purpose send_mail — used by reminder emails and other controllers.
+     *
+     * @param  array       $mail  ['adrs' => ..., 'sub' => ..., 'body' => ...]
+     * @param  string|null $attachment  Absolute path to file (optional)
+     * @return bool
      */
     public function send_mail($mail, $attachment = null)
     {
-        // clear(TRUE) resets everything including attachments — prevents state bleed between calls
-        $this->email->clear(TRUE);
-        $this->email->initialize($this->_smtp_config());
-
-        $from_address = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-        $from_name    = env('MAIL_FROM_NAME',    'Harvest Green Montessori School');
-
-        $this->email->from($from_address, $from_name);
-        $this->email->reply_to($from_address, $from_name);
-        $this->email->to($mail['adrs']);
-        $this->email->subject($mail['sub']);
-        $this->email->message($mail['body']);
+        $params = [
+            'to'      => $mail['adrs'],
+            'subject' => $mail['sub'],
+            'body'    => $mail['body'],
+        ];
 
         if (!empty($attachment) && file_exists($attachment)) {
-            $this->email->attach($attachment);
+            $params['attachments'] = [$attachment];
         }
 
-        if ($this->email->send()) {
-            log_message('info', 'Email sent successfully to: ' . $mail['adrs']);
-            return true;
+        $result = $this->_mailer()->send($params);
+
+        if ($result) {
+            log_message('info', '[HOME_Controller] Email sent to: ' . $mail['adrs']);
         } else {
-            // print_debugger with only headers/subject/body — never logs SMTP password
-            log_message('error', 'Email send failed to [' . $mail['adrs'] . ']: ' . $this->email->print_debugger(['headers', 'subject', 'body']));
-            return false;
+            log_message('error', '[HOME_Controller] Email FAILED to: ' . $mail['adrs']);
         }
+        return $result;
     }
     
 

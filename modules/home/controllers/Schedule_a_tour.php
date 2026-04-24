@@ -52,91 +52,52 @@ class Schedule_a_tour extends HOME_Controller
                . 'table{border-collapse:collapse;width:100%;margin-bottom:12px}'
                . 'td,th{border:1px solid #30363d;padding:8px 12px}th{background:#21262d}'
                . '.box{border:1px solid #30363d;border-radius:6px;padding:16px 20px;margin-bottom:20px}</style>';
-        $html .= '<h2>SMTP Diagnostic &mdash; Harvest Green Montessori</h2>';
+        $html .= '<h2>Microsoft Graph Mail Diagnostic &mdash; Harvest Green Montessori</h2>';
         $html .= '<p>Environment: <strong>' . ENVIRONMENT . '</strong> &nbsp;|&nbsp; PHP: ' . phpversion()
                . ' &nbsp;|&nbsp; OS: ' . PHP_OS . ' &nbsp;|&nbsp; ' . date('Y-m-d H:i:s') . ' (server time)</p>';
 
-        $cacert = APPPATH . 'config/cacert.pem';
-        $html .= '<table><tr><th colspan="2">Server Info</th></tr>'
-               . '<tr><td>OpenSSL</td><td>' . (defined('OPENSSL_VERSION_TEXT') ? OPENSSL_VERSION_TEXT : '<span class="fail">NOT LOADED</span>') . '</td></tr>'
-               . '<tr><td>cacert.pem</td><td>' . (is_file($cacert) ? '<span class="ok">Found (' . number_format(filesize($cacert)) . ' bytes)</span>' : '<span class="warn">Not found (OK on Linux)</span>') . '</td></tr>'
-               . '<tr><td>Email class</td><td>' . get_class($this->email) . '</td></tr>'
-               . '<tr><td>DIRECTORY_SEPARATOR</td><td>' . DIRECTORY_SEPARATOR . ' (' . (DIRECTORY_SEPARATOR === '\\' ? 'Windows — custom SMTP' : 'Linux — native CI SMTP') . ')</td></tr>'
-               . '<tr><td>fsockopen()</td><td>' . (function_exists('fsockopen') ? '<span class="ok">Available</span>' : '<span class="fail">DISABLED</span>') . '</td></tr>'
-               . '<tr><td>stream_socket_client()</td><td>' . (function_exists('stream_socket_client') ? '<span class="ok">Available</span>' : '<span class="fail">DISABLED</span>') . '</td></tr>'
-               . '</table>';
+        $from  = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
+        $admin = env('ADMIN_MAIL_TO',     'info@harvestgreenmontessori.com');
 
-        // Helper: TCP port check
-        $port_status = function ($host, $port) {
-            $fp = @fsockopen($host, $port, $errno, $errstr, 6);
-            if ($fp) { fclose($fp); return '<span class="ok">OPEN</span>'; }
-            return '<span class="fail">BLOCKED &mdash; ' . htmlspecialchars($errstr) . ' (' . $errno . ')</span>';
-        };
-
-        // Helper: attempt actual send
-        $do_send = function ($label, $cfg, $from_addr, $to_addr) use (&$html) {
-            $this->email->clear(TRUE);
-            $this->email->initialize($cfg);
-            $this->email->from($from_addr, 'HGM Diagnostic');
-            $this->email->to($to_addr);
-            $this->email->subject('[TEST] ' . $label . ' — ' . date('Y-m-d H:i:s'));
-            $this->email->message('<p>Diagnostic test via <strong>' . htmlspecialchars($label)
-                . '</strong> at ' . date('Y-m-d H:i:s') . '</p><p>From: '
-                . htmlspecialchars($from_addr) . '<br>To: ' . htmlspecialchars($to_addr) . '</p>');
-            if ($this->email->send()) {
-                $html .= '<p class="ok">&#10004; SENT &rarr; ' . htmlspecialchars($to_addr) . '</p>';
-            } else {
-                $dbg = $this->email->print_debugger();
-                $html .= '<p class="fail">&#10008; FAILED &rarr; ' . htmlspecialchars($to_addr) . '</p>'
-                       . '<pre>' . htmlspecialchars($dbg) . '</pre>';
-            }
-        };
-
-        // ── Mail Config ───────────────────────────────────────────────────────
-        $cfg    = $this->_smtp_config();
-        $from   = env('MAIL_FROM_ADDRESS', 'info@harvestgreenmontessori.com');
-        $admin  = env('ADMIN_MAIL_TO', 'info@harvestgreenmontessori.com');
-
-        $html .= '<div class="box"><h3>&#9312; Mail Configuration</h3>';
-        $html .= '<table>'
-               . '<tr><td>Protocol</td><td><strong>' . htmlspecialchars($cfg['protocol']) . '</strong></td></tr>';
-        if ($cfg['protocol'] === 'smtp') {
-            $html .= '<tr><td>Host</td><td>' . htmlspecialchars($cfg['smtp_host'] ?? '') . '</td></tr>'
-                   . '<tr><td>Port</td><td>' . ($cfg['smtp_port'] ?? '') . ' &mdash; ' . $port_status($cfg['smtp_host'] ?? '', $cfg['smtp_port'] ?? 25) . '</td></tr>'
-                   . '<tr><td>Crypto</td><td>' . htmlspecialchars($cfg['smtp_crypto'] ?? '') . '</td></tr>'
-                   . '<tr><td>Auth user</td><td>' . htmlspecialchars($cfg['smtp_user'] ?? '') . '</td></tr>'
-                   . '<tr><td>Auth pass</td><td>' . (empty($cfg['smtp_pass']) ? '<span class="warn">EMPTY (no auth)</span>' : str_repeat('*', strlen($cfg['smtp_pass']))) . '</td></tr>';
-        } elseif ($cfg['protocol'] === 'sendmail') {
-            $html .= '<tr><td>Mailpath</td><td>' . htmlspecialchars($cfg['mailpath'] ?? '/usr/sbin/sendmail') . '</td></tr>';
-        }
-        $html .= '<tr><td>From</td><td>' . htmlspecialchars($from) . '</td></tr>'
-               . '<tr><td>ADMIN_MAIL_TO</td><td>' . htmlspecialchars($admin) . '</td></tr>'
-               . '</table>';
-        $html .= '</div>';
-
-        // ── Test 1: Send to admin (info@) ─────────────────────────────────────
-        $html .= '<div class="box"><h3>&#9313; Test Send &rarr; Admin (' . htmlspecialchars($admin) . ')</h3>';
-        $do_send($cfg['protocol'], $cfg, $from, $admin);
-        $html .= '</div>';
-
-        // ── Test 2: Send to ?to= param, defaulting to sachintawde548@gmail.com ────
-        $extra_to_raw = $this->input->get('to');
-        $extra_to     = (!empty($extra_to_raw) && filter_var($extra_to_raw, FILTER_VALIDATE_EMAIL))
-                        ? $extra_to_raw
-                        : 'sachintawde548@gmail.com';
-        $html .= '<div class="box"><h3>&#9314; Test Send &rarr; External (' . htmlspecialchars($extra_to) . ')</h3>';
-        $do_send($cfg['protocol'], $cfg, $from, $extra_to);
-        $html .= '</div>';
-
-        // ── Env vars dump ─────────────────────────────────────────────────────
-        $html .= '<div class="box"><h3>&#9315; Key Environment Variables</h3>';
-        $env_keys = ['APP_ENV', 'MAIL_PROTOCOL', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_ENCRYPTION', 'MAIL_USERNAME', 'MAIL_FROM_ADDRESS', 'ADMIN_MAIL_TO'];
+        // ── Graph API env vars ────────────────────────────────────────────────
+        $html .= '<div class="box"><h3>&#9312; Microsoft Graph Configuration</h3>';
+        $env_keys = ['MS_GRAPH_TENANT_ID', 'MS_GRAPH_CLIENT_ID', 'MS_GRAPH_CLIENT_SECRET', 'MAIL_FROM_ADDRESS', 'ADMIN_MAIL_TO'];
         $html .= '<table>';
         foreach ($env_keys as $k) {
             $v = getenv($k);
-            $html .= '<tr><td>' . $k . '</td><td>' . ($v !== false ? htmlspecialchars($v) : '<span class="warn">NOT SET</span>') . '</td></tr>';
+            if ($k === 'MS_GRAPH_CLIENT_SECRET' && $v) {
+                $display = str_repeat('*', max(0, strlen($v) - 4)) . substr($v, -4);
+            } else {
+                $display = $v !== false ? htmlspecialchars($v) : '<span class="warn">NOT SET</span>';
+            }
+            $html .= '<tr><td>' . $k . '</td><td>' . $display . '</td></tr>';
         }
         $html .= '</table></div>';
+
+        // ── Test 1: Send to admin ─────────────────────────────────────────────
+        $html .= '<div class="box"><h3>&#9313; Test Send &rarr; Admin (' . htmlspecialchars($admin) . ')</h3>';
+        $sent1 = $this->send_mail([
+            'adrs' => $admin,
+            'sub'  => '[TEST] Graph API Diagnostic — ' . date('Y-m-d H:i:s'),
+            'body' => '<p>Graph API diagnostic test sent to admin at ' . date('Y-m-d H:i:s') . '</p>',
+        ]);
+        $html .= $sent1 ? '<p class="ok">&#10004; SENT &rarr; ' . htmlspecialchars($admin) . '</p>'
+                        : '<p class="fail">&#10008; FAILED &rarr; ' . htmlspecialchars($admin) . ' (check application/logs)</p>';
+        $html .= '</div>';
+
+        // ── Test 2: Send to ?to= param ────────────────────────────────────────
+        $extra_to_raw = $this->input->get('to');
+        $extra_to     = (!empty($extra_to_raw) && filter_var($extra_to_raw, FILTER_VALIDATE_EMAIL))
+                        ? $extra_to_raw : 'sachintawde548@gmail.com';
+        $html .= '<div class="box"><h3>&#9314; Test Send &rarr; External (' . htmlspecialchars($extra_to) . ')</h3>';
+        $sent2 = $this->send_mail([
+            'adrs' => $extra_to,
+            'sub'  => '[TEST] Graph API Diagnostic — ' . date('Y-m-d H:i:s'),
+            'body' => '<p>Graph API diagnostic test sent to ' . htmlspecialchars($extra_to) . ' at ' . date('Y-m-d H:i:s') . '</p>',
+        ]);
+        $html .= $sent2 ? '<p class="ok">&#10004; SENT &rarr; ' . htmlspecialchars($extra_to) . '</p>'
+                        : '<p class="fail">&#10008; FAILED &rarr; ' . htmlspecialchars($extra_to) . ' (check application/logs)</p>';
+        $html .= '</div>';
 
         $html .= '<p style="color:#8b949e;font-size:11px">&#9888; Remove or protect this endpoint before leaving in production.</p>';
         $this->output->set_header('Cache-Control: no-store, no-cache');
