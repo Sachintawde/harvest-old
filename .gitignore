@@ -15,8 +15,6 @@ env.staging
 # Keep env.example as it has no real credentials
 !env.example
 
-# Temporary diagnostic/test scripts
-graph_live_test.php
 
 # CodeIgniter Specific
 application/cache/*
