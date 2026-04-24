@@ -39,7 +39,7 @@ class Tour extends ADMIN_Controller {
 
         foreach($t as $row) {
 
-            $t_id = $row->t_id;
+            $t_id = $row['t_id'];
 
             $button = '<!-- Single button -->
 
@@ -65,11 +65,11 @@ class Tour extends ADMIN_Controller {
 
             $output['data'][] = array( 		
 
-                $row->t_child_name_1,
-                $row->t_child_lname_1,
-                $row->t_mother_name,
-                $row->t_mother_email,
-                $row->t_mother_phone,
+                $row['t_child_name_1'],
+                $row['t_child_lname_1'],
+                $row['t_mother_name'],
+                $row['t_mother_email'],
+                $row['t_mother_phone'],
 
                 $button
 
