@@ -133,12 +133,10 @@ if ($this->session->flashdata('error')) {
                 <div class="tour-field">
                     <label class="tour-form-label">Phone <span class="imp">*</span></label>
                     <div class="tour-phone-group">
-                        <span class="tour-phone-prefix">&#127470;&#127475; +91</span>
-                        <input type="hidden" name="t_country_code" id="t_country_code_val" value="+91">
                         <input type="tel" name="t_mother_phone" id="t_mother_phone" class="tour-form-control"
-                               placeholder="10-digit mobile number (starts with 6-9)"
+                               placeholder="Phone number"
                                value="<?= htmlspecialchars($fd['t_mother_phone'] ?? '') ?>"
-                               maxlength="10" inputmode="numeric"
+                               maxlength="15" inputmode="numeric"
                                autocomplete="tel" required>
                     </div>
                     <span class="field-error" id="err_phone"></span>
