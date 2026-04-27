@@ -22,13 +22,24 @@ class Schedule_a_tour_model extends CI_Model
         );
 
         $check_slot = $this->db->get_where('tour', $where1)->num_rows();
+
+        $phone_norm = preg_replace('/\D/', '', trim($row['t_mother_phone'] ?? ''));
         $where2 = array(
             't_start_date_field' => $row['t_start_date_field'],
-            't_mother_phone'     => $row['t_mother_phone'],
-            't_status'           => 1,   // only count active bookings
+            't_mother_phone'     => $phone_norm,
+            't_status'           => 1,
         );
-
         $check_mob = $this->db->get_where('tour', $where2)->num_rows();
+
+        $email_norm = strtolower(trim($row['t_mother_email'] ?? ''));
+        $check_email = 0;
+        if (!empty($email_norm)) {
+            $check_email = $this->db
+                ->where('t_start_date_field', $row['t_start_date_field'])
+                ->where('t_mother_email', $email_norm)
+                ->where('t_status', 1)
+                ->count_all_results('tour');
+        }
 
         if ($check_slot) {
             $this->session->set_flashdata('post_data', $row);
@@ -36,7 +47,11 @@ class Schedule_a_tour_model extends CI_Model
             $valid = false;
         } elseif ($check_mob) {
             $this->session->set_flashdata('post_data', $row);
-            $this->session->set_flashdata('error', 'You already have a tour scheduled on that date (' . ($row['t_mother_phone'] ?? '') . '). Please select a different date.');
+            $this->session->set_flashdata('error', 'You have already booked a tour for this date using this phone number. Please select a different date.');
+            $valid = false;
+        } elseif ($check_email) {
+            $this->session->set_flashdata('post_data', $row);
+            $this->session->set_flashdata('error', 'You have already booked a tour for this date using this email address. Please select a different date.');
             $valid = false;
         } else {
             // Handling Signature Upload

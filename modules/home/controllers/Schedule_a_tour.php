@@ -14,6 +14,9 @@ class Schedule_a_tour extends HOME_Controller
 
     public function index()
     {
+        // Generate a one-time form token and record page-load time for anti-spam checks
+        $this->session->set_userdata('tour_form_token', bin2hex(random_bytes(32)));
+        $this->session->set_userdata('tour_form_loaded', time());
         $this->load->view("schedule-a-tour");
     }
     public function test_outlook(){
@@ -105,8 +108,83 @@ class Schedule_a_tour extends HOME_Controller
         echo $html;
     }
 
+    // ── Private: IP-based rate limiter (max 5 tour submissions per hour) ────────
+    private function _tour_ip_rate_ok()
+    {
+        $ip     = $this->input->ip_address();
+        $file   = APPPATH . 'cache/tour_rl_' . md5($ip) . '.json';
+        $limit  = 5;
+        $window = 3600;
+        $now    = time();
+
+        $data = ['count' => 0, 'window_start' => $now];
+        if (file_exists($file)) {
+            $stored = json_decode(file_get_contents($file), true);
+            if (is_array($stored) && ($now - (int) $stored['window_start']) < $window) {
+                $data = $stored;
+            }
+        }
+
+        if ((int) $data['count'] >= $limit) {
+            return false;
+        }
+
+        $data['count'] = (int) $data['count'] + 1;
+        @file_put_contents($file, json_encode($data), LOCK_EX);
+        return true;
+    }
+
     public function add_tour()
     {
+        // ── Layer 1: Honeypot – must be empty; bots fill it ──────────────────────
+        if (!empty($this->input->post('website'))) {
+            // Silent redirect – do not reveal why, so bots cannot adapt
+            redirect(base_url('schedule_a_tour'));
+            return;
+        }
+
+        // ── Layer 2: One-time form token (CSRF-style) ────────────────────────────
+        $expected_token  = (string) $this->session->userdata('tour_form_token');
+        $submitted_token = (string) $this->input->post('_tour_token');
+        if (empty($expected_token) || !hash_equals($expected_token, $submitted_token)) {
+            $this->session->set_flashdata('error', 'Security token mismatch. Please reload the page and try again.');
+            redirect(base_url('schedule_a_tour'));
+            return;
+        }
+        // Invalidate after first use
+        $this->session->unset_userdata('tour_form_token');
+
+        // ── Layer 3: Timing check – reject submissions faster than 3 seconds ────
+        $loaded_at = (int) $this->session->userdata('tour_form_loaded');
+        if ($loaded_at === 0 || (time() - $loaded_at) < 3) {
+            $this->session->set_flashdata('error', 'Form submitted too quickly. Please take a moment to fill in your details.');
+            redirect(base_url('schedule_a_tour'));
+            return;
+        }
+        $this->session->unset_userdata('tour_form_loaded');
+
+        // ── Layer 4: IP rate limit (max 5 per hour) ──────────────────────────────
+        if (!$this->_tour_ip_rate_ok()) {
+            $this->session->set_flashdata('error', 'Too many requests from your network. Please try again later.');
+            redirect(base_url('schedule_a_tour'));
+            return;
+        }
+
+        // ── Layer 5: Email rate limit (max 2 submissions per email per hour) ─────
+        $raw_email = $this->input->post('t_mother_email', true);
+        if (!empty($raw_email)) {
+            $one_hr_ago = date('Y-m-d H:i:s', strtotime('-1 hour'));
+            $recent_count = $this->db
+                ->where('t_mother_email', $raw_email)
+                ->where('t_date >=', $one_hr_ago)
+                ->count_all_results('tour');
+            if ($recent_count >= 2) {
+                $this->session->set_flashdata('error', 'A tour request from this email was recently submitted. Please wait before trying again.');
+                redirect(base_url('schedule_a_tour'));
+                return;
+            }
+        }
+
         $this->load->library('form_validation');
     
         // Required fields (match the new minimal form)
@@ -117,7 +195,7 @@ class Schedule_a_tour extends HOME_Controller
         $this->form_validation->set_rules('t_start_date_field','Preferred Tour Date',  'required');
         $this->form_validation->set_rules('t_time_slot',       'Preferred Time',       'required');
         $this->form_validation->set_rules('t_program',         'Program Interest',     'required');
-        $this->form_validation->set_rules('t_signature_date',  'Expected Start Date',  'required');
+        $this->form_validation->set_rules('t_signature_date',  'Expected Start Date',  'required|trim');
         $this->form_validation->set_rules('t_source',          'How did you hear',     'required|trim');
         $this->form_validation->set_rules('t_child_name_1',    'Child First Name',     'required|trim');
         $this->form_validation->set_rules('t_child_lname_1',   'Child Last Name',      'required|trim');
@@ -186,7 +264,11 @@ class Schedule_a_tour extends HOME_Controller
         $post_data['t_agegroups'] = (!empty($t_agegroups) && is_array($t_agegroups))
             ? implode(',', $t_agegroups)
             : (isset($post_data['t_program']) && $post_data['t_program'] !== '' ? $post_data['t_program'] : 'N/A');
-    
+
+        // Normalize contact fields to prevent duplicate bypass via case/whitespace/formatting
+        $post_data['t_mother_email'] = strtolower(trim($post_data['t_mother_email'] ?? ''));
+        $post_data['t_mother_phone'] = preg_replace('/\D/', '', trim($post_data['t_mother_phone'] ?? ''));
+
         $this->load->model("schedule_a_tour_model");
         $valid = $this->schedule_a_tour_model->add_tour($post_data);
     
@@ -335,6 +417,64 @@ class Schedule_a_tour extends HOME_Controller
         echo json_encode($slots);
     }
 
+    /**
+     * AJAX duplicate-booking check.
+     * Request:  GET /Schedule_a_tour/check_duplicate?email=...&phone=...&date=YYYY-MM-DD
+     * Response: {"duplicate":false} or {"duplicate":true,"message":"..."}
+     */
+    public function check_duplicate()
+    {
+        $this->output->set_content_type('application/json');
+
+        $email = strtolower(trim($this->input->get('email', true) ?? ''));
+        $phone = preg_replace('/\D/', '', trim($this->input->get('phone', true) ?? ''));
+        $date_iso = trim($this->input->get('date', true) ?? '');
+
+        // Need at least a date and one contact field to check
+        if (empty($date_iso) || (empty($email) && empty($phone))) {
+            echo json_encode(['duplicate' => false]);
+            return;
+        }
+
+        // Validate date format YYYY-MM-DD
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_iso)) {
+            echo json_encode(['duplicate' => false]);
+            return;
+        }
+
+        // Convert YYYY-MM-DD → mm/dd/yyyy (stored format in t_start_date_field)
+        $parts = explode('-', $date_iso);
+        $date_stored = $parts[1] . '/' . $parts[2] . '/' . $parts[0];
+
+        // Check phone match
+        if (!empty($phone)) {
+            $count = $this->db
+                ->where('t_start_date_field', $date_stored)
+                ->where('t_mother_phone', $phone)
+                ->where('t_status', 1)
+                ->count_all_results('tour');
+            if ($count > 0) {
+                echo json_encode(['duplicate' => true, 'message' => 'You have already booked a tour for this date using this phone number.']);
+                return;
+            }
+        }
+
+        // Check email match (collation is utf8mb4_general_ci → case-insensitive)
+        if (!empty($email)) {
+            $count = $this->db
+                ->where('t_start_date_field', $date_stored)
+                ->where('t_mother_email', $email)
+                ->where('t_status', 1)
+                ->count_all_results('tour');
+            if ($count > 0) {
+                echo json_encode(['duplicate' => true, 'message' => 'You have already booked a tour for this date using this email address.']);
+                return;
+            }
+        }
+
+        echo json_encode(['duplicate' => false]);
+    }
+
     public function get_school_closed_events()    {
         $this->db->select('event_start, event_end');
         $this->db->from('event');
@@ -457,6 +597,7 @@ class Schedule_a_tour extends HOME_Controller
             echo "Reminder emails sent successfully!";
         }
     }
-    
-    
+
+    // ── Validation callbacks ──────────────────────────────────────────────────
+
 }

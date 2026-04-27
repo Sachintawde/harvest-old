@@ -45,6 +45,8 @@
     .tour-phone-group { display: flex; gap: 0; }
     .tour-phone-prefix { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 10px; border: 1px solid #d1d5db; border-right: none; border-radius: 4px 0 0 4px; background: #f9fafb; font-size: 13px; color: #374151; white-space: nowrap; }
     .tour-phone-group .tour-form-control { border-radius: 0 4px 4px 0; }
+    .tour-country-code { height: 40px; padding: 0 8px 0 10px; border: 1px solid #d1d5db; border-right: none; border-radius: 4px 0 0 4px; background: #f9fafb; font-size: 13px; color: #374151; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 26px; min-width: 90px; }
+    .tour-country-code:focus { border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,.15); }
     .add-child-btn { background: none; border: none; color: #2563eb; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 4px; margin: 4px 0 16px; }
     .add-child-btn:hover { text-decoration: underline; }
     .child2-section { display: none; border-top: 1px solid #e5e7eb; padding-top: 18px; margin-top: 4px; }
@@ -60,6 +62,8 @@
         .tour-form-row { flex-direction: column; gap: 0; }
         .tour-card { padding: 24px 16px 28px; }
     }
+    .field-error { display: block; color: #dc2626; font-size: 12px; margin-top: 4px; min-height: 16px; }
+    input.is-invalid, select.is-invalid { border-color: #dc2626 !important; box-shadow: 0 0 0 2px rgba(220,38,38,.15) !important; }
 </style>
 <!-- datapicker CSS -->
 <link rel="stylesheet" href="<?= base_url(); ?>assets/admin/css/datapicker/datepicker3.css">
@@ -98,6 +102,15 @@ if ($this->session->flashdata('error')) {
             <?php $fd = $this->session->flashdata('post_data') ?: []; ?>
             <form action="<?= base_url() ?>schedule_a_tour/add_tour" method="post" id="Tour-form">
 
+                <?php /* Anti-spam: one-time form token */ ?>
+                <input type="hidden" name="_tour_token" value="<?= htmlspecialchars($this->session->userdata('tour_form_token') ?? '', ENT_QUOTES, 'UTF-8') ?>">
+
+                <?php /* Anti-spam: honeypot – invisible to real users; bots fill every field */ ?>
+                <div style="position:absolute;left:-9999px;top:-9999px;width:0;height:0;overflow:hidden;" aria-hidden="true">
+                    <label for="hp_website">Website (leave blank)</label>
+                    <input type="text" id="hp_website" name="website" value="" tabindex="-1" autocomplete="off">
+                </div>
+
                 <!-- First Name / Last Name -->
                 <div class="tour-form-row">
                     <div class="tour-field">
@@ -113,16 +126,23 @@ if ($this->session->flashdata('error')) {
                 <!-- Email -->
                 <div class="tour-field">
                     <label class="tour-form-label">Email <span class="imp">*</span></label>
-                    <input type="email" name="t_mother_email" class="tour-form-control" placeholder="email@example.com" value="<?= htmlspecialchars($fd['t_mother_email'] ?? '') ?>" required>
+                    <input type="email" name="t_mother_email" id="t_mother_email" class="tour-form-control" placeholder="email@example.com" value="<?= htmlspecialchars($fd['t_mother_email'] ?? '') ?>" required>
+                    <span class="field-error" id="err_duplicate"></span>
                 </div>
 
                 <!-- Phone -->
                 <div class="tour-field">
                     <label class="tour-form-label">Phone <span class="imp">*</span></label>
                     <div class="tour-phone-group">
-                        <span class="tour-phone-prefix">&#127482;&#127480; US &nbsp;+1</span>
-                        <input type="tel" name="t_mother_phone" class="tour-form-control" placeholder="(555) 000-0000" value="<?= htmlspecialchars($fd['t_mother_phone'] ?? '') ?>" required>
+                        <span class="tour-phone-prefix">&#127470;&#127475; +91</span>
+                        <input type="hidden" name="t_country_code" id="t_country_code_val" value="+91">
+                        <input type="tel" name="t_mother_phone" id="t_mother_phone" class="tour-form-control"
+                               placeholder="10-digit mobile number (starts with 6-9)"
+                               value="<?= htmlspecialchars($fd['t_mother_phone'] ?? '') ?>"
+                               maxlength="10" inputmode="numeric"
+                               autocomplete="tel" required>
                     </div>
+                    <span class="field-error" id="err_phone"></span>
                 </div>
 
                 <!-- How did you hear -->
@@ -155,11 +175,43 @@ if ($this->session->flashdata('error')) {
                 <div class="tour-form-row">
                     <div class="tour-field">
                         <label class="tour-form-label">Date of Birth <span class="imp">*</span></label>
-                        <input type="text" name="t_dob_1" id="t_dob_1" class="tour-form-control" placeholder="mm/dd/yyyy" value="<?= htmlspecialchars($fd['t_dob_1'] ?? '') ?>" required>
+                        <?php
+                            // Prefill: accept YYYY-MM-DD (new) or mm/dd/yyyy (legacy flashdata)
+                            $prefill_dob1 = '';
+                            if (!empty($fd['t_dob_1'])) {
+                                $v = $fd['t_dob_1'];
+                                // Already YYYY-MM-DD?
+                                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) {
+                                    $prefill_dob1 = $v;
+                                } else {
+                                    $dt = DateTime::createFromFormat('!m/d/Y', $v);
+                                    $prefill_dob1 = $dt ? $dt->format('Y-m-d') : '';
+                                }
+                            }
+                        ?>
+                        <input type="date" name="t_dob_1" id="t_dob_1_picker" class="tour-form-control"
+                               min="1900-01-01" max="<?= date('Y-m-d') ?>"
+                               value="<?= htmlspecialchars($prefill_dob1) ?>" required>
+                        <span class="field-error" id="err_dob1"></span>
                     </div>
                     <div class="tour-field">
                         <label class="tour-form-label">Expected Start Date <span class="imp">*</span></label>
-                        <input type="text" name="t_signature_date" id="t_signature_date" class="tour-form-control" placeholder="mm/dd/yyyy" value="<?= htmlspecialchars($fd['t_signature_date'] ?? '') ?>" required>
+                        <?php
+                            $prefill_sig = '';
+                            if (!empty($fd['t_signature_date'])) {
+                                $v = $fd['t_signature_date'];
+                                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) {
+                                    $prefill_sig = $v;
+                                } else {
+                                    $dt = DateTime::createFromFormat('!m/d/Y', $v);
+                                    $prefill_sig = $dt ? $dt->format('Y-m-d') : '';
+                                }
+                            }
+                        ?>
+                        <input type="date" name="t_signature_date" id="t_signature_date_picker" class="tour-form-control"
+                               min="<?= date('Y-m-d') ?>"
+                               value="<?= htmlspecialchars($prefill_sig) ?>" required>
+                        <span class="field-error" id="err_sig_date"></span>
                     </div>
                 </div>
 
@@ -199,7 +251,11 @@ if ($this->session->flashdata('error')) {
                     <div class="tour-form-row">
                         <div class="tour-field">
                             <label class="tour-form-label">Date of Birth</label>
-                            <input type="text" name="t_dob_2" id="t_dob_2" class="tour-form-control" placeholder="mm/dd/yyyy" value="<?= htmlspecialchars($fd['t_dob_2'] ?? '') ?>">
+                            <?php $prefill_dob2_iso = !empty($fd['t_dob_2']) ? date('Y-m-d', strtotime($fd['t_dob_2'])) : ''; ?>
+                            <input type="date" id="t_dob_2_picker" class="tour-form-control"
+                                   min="<?= $dob_min ?>" max="<?= $dob_max ?>"
+                                   value="<?= htmlspecialchars($prefill_dob2_iso) ?>">
+                            <input type="hidden" name="t_dob_2" id="t_dob_2" value="<?= htmlspecialchars($fd['t_dob_2'] ?? '') ?>">
                         </div>
                         <div class="tour-field">
                             <label class="tour-form-label">Second Child's Program Interest</label>
@@ -223,7 +279,20 @@ if ($this->session->flashdata('error')) {
                 <div class="tour-form-row">
                     <div class="tour-field">
                         <label class="tour-form-label">Preferred Tour Date <span class="imp">*</span></label>
-                        <input type="text" name="t_start_date_field" id="t_start_date_field" class="tour-form-control" placeholder="Select a date" value="<?= htmlspecialchars($fd['t_start_date_field'] ?? '') ?>" required>
+                        <?php
+                            // Convert stored mm/dd/yyyy → YYYY-MM-DD for the native date input
+                            $prefill_iso = !empty($fd['t_start_date_field'])
+                                ? date('Y-m-d', strtotime($fd['t_start_date_field']))
+                                : '';
+                        ?>
+                        <!-- Visible native date picker (no name – value is converted to mm/dd/yyyy in hidden field below) -->
+                        <input type="date" id="t_start_date_picker" class="tour-form-control"
+                               min="<?= date('Y-m-d') ?>"
+                               value="<?= htmlspecialchars($prefill_iso) ?>"
+                               required>
+                        <!-- Hidden field carries the mm/dd/yyyy value the server expects -->
+                        <input type="hidden" name="t_start_date_field" id="t_start_date_field"
+                               value="<?= htmlspecialchars($fd['t_start_date_field'] ?? '') ?>">
                     </div>
                     <div class="tour-field">
                         <label class="tour-form-label">Preferred Time <span class="imp">*</span></label>
@@ -272,7 +341,7 @@ if ($this->session->flashdata('error')) {
 <script src="<?= base_url(); ?>assets/admin/js/datapicker/bootstrap-datepicker.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+$(function () {
 
     // â”€â”€ Add a child toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     document.getElementById('addChildBtn').addEventListener('click', function () {
@@ -282,55 +351,52 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // â”€â”€ Disable school-closed dates from calendar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    var datesForDisable = [];
-
+    var closedDatesISO = []; // 'YYYY-MM-DD' strings for school-closed days
     function getDatesInRange(start, end) {
-        var arr = [], cur = moment(start, "DD/MM/YYYY"), stop = moment(end, "DD/MM/YYYY");
-        while (cur <= stop) { arr.push(cur.format("DD/MM/YYYY")); cur = cur.add(1, 'days'); }
+        // start/end arrive as DD/MM/YYYY from the server
+        var arr = [], cur = moment(start, 'DD/MM/YYYY'), stop = moment(end, 'DD/MM/YYYY');
+        while (cur <= stop) { arr.push(cur.format('YYYY-MM-DD')); cur = cur.add(1, 'days'); }
         return arr;
     }
-
+    // ── Preferred Tour Date picker: registered after AJAX (needs school-closed dates) ───
     $.ajax({
         url: base_url + 'Schedule_a_tour/get_school_closed_events',
         type: 'get', dataType: 'json',
         success: function (response) {
             response.forEach(function (ev) {
-                datesForDisable = datesForDisable.concat(getDatesInRange(ev.event_start, ev.event_end));
+                closedDatesISO = closedDatesISO.concat(getDatesInRange(ev.event_start, ev.event_end));
             });
             initDatepickers();
         },
         error: function () { initDatepickers(); }
     });
-
-    function isDisabled(date) {
-        return datesForDisable.indexOf(moment(date).format("DD/MM/YYYY")) !== -1;
-    }
-
     function initDatepickers() {
-        $("#t_start_date_field").datepicker({
-            format: 'mm/dd/yyyy',
-            daysOfWeekDisabled: [0, 6],
-            autoclose: true, todayHighlight: true,
-            startDate: new Date(),
-            beforeShowDay: function (d) { return !isDisabled(d); }
-        }).on('changeDate', function (e) {
-            // Reload available slots whenever the date changes
-            var selectedDate = $(this).val();
-            if (selectedDate) {
-                fetchBookedSlots(selectedDate);
+        var $picker = $('#t_start_date_picker');
+        var $hidden = $('#t_start_date_field');
+        $picker.on('change', function () {
+            var iso = this.value; // YYYY-MM-DD
+            if (!iso) { $hidden.val(''); return; }
+            var d   = new Date(iso + 'T00:00:00');
+            var dow = d.getDay();
+            if (dow === 0 || dow === 6) {
+                this.value = ''; $hidden.val('');
+                alert('We are closed on weekends. Please choose a weekday.');
+                return;
             }
+            if (closedDatesISO.indexOf(iso) !== -1) {
+                this.value = ''; $hidden.val('');
+                alert('The school is closed on that date. Please select another day.');
+                return;
+            }
+            var parts    = iso.split('-');
+            var mmddyyyy = parts[1] + '/' + parts[2] + '/' + parts[0];
+            $hidden.val(mmddyyyy);
+            fetchBookedSlots(mmddyyyy);
+            checkDuplicate();
         });
-
-        $("#t_signature_date, #t_dob_1, #t_dob_2").datepicker({
-            format: 'mm/dd/yyyy',
-            autoclose: true, todayHighlight: true
-        });
-
-        // If a date is already pre-filled (form re-display after error), load slots now
-        var prefilledDate = $("#t_start_date_field").val();
-        if (prefilledDate) {
-            fetchBookedSlots(prefilledDate);
-        }
+        // If tour date is already pre-filled (form re-display after error)
+        var prefilledDate = $hidden.val();
+        if (prefilledDate) { fetchBookedSlots(prefilledDate); }
     }
 
     function fetchBookedSlots(date) {
@@ -364,5 +430,100 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+
+    // ── Phone: digits only (no length/start-digit restriction) ─────────────────
+    var $phone = $('#t_mother_phone');
+    $phone.on('keypress', function (e) {
+        if (e.which !== 0 && e.which !== 8 && e.which !== 9 && e.which !== 46 &&
+            (e.which < 48 || e.which > 57)) {
+            e.preventDefault();
+        }
+    });
+    $phone.on('input', function () {
+        this.value = this.value.replace(/\D/g, '').substring(0, 15);
+    });
+    $phone.on('paste', function (e) {
+        e.preventDefault();
+        var pasted = (e.originalEvent.clipboardData || window.clipboardData).getData('text');
+        this.value = pasted.replace(/\D/g, '').substring(0, 15);
+    });
+
+    // ── Duplicate booking check (AJAX) ──────────────────────────────────────
+    var duplicateBlocked = false;
+
+    function checkDuplicate() {
+        var dateIso  = $('#t_start_date_picker').val();
+        var phone    = $('#t_mother_phone').val().replace(/\D/g, '');
+        var email    = $.trim($('#t_mother_email').val()).toLowerCase();
+
+        if (!dateIso || (!phone && !email)) {
+            showErr('err_duplicate', '');
+            duplicateBlocked = false;
+            return;
+        }
+
+        $.ajax({
+            url: base_url + 'Schedule_a_tour/check_duplicate',
+            type: 'GET',
+            data: { date: dateIso, phone: phone, email: email },
+            dataType: 'json',
+            success: function (res) {
+                if (res.duplicate) {
+                    showErr('err_duplicate', res.message);
+                    duplicateBlocked = true;
+                } else {
+                    showErr('err_duplicate', '');
+                    duplicateBlocked = false;
+                }
+            },
+            error: function () {
+                // On network error, allow submission — server will re-check
+                duplicateBlocked = false;
+            }
+        });
+    }
+
+    $('#t_mother_phone').on('blur', checkDuplicate);
+    $('#t_mother_email').on('blur', checkDuplicate);
+
+    // ── Form submit: client-side gate ────────────────────────────────────────
+    $('#Tour-form').on('submit', function (e) {
+        var ok = true;
+
+        // Sync tour date hidden field from picker if change event was missed
+        var tourIso = $('#t_start_date_picker').val();
+        if (tourIso && !$('#t_start_date_field').val()) {
+            var td = new Date(tourIso + 'T00:00:00'), dow = td.getDay();
+            if (dow !== 0 && dow !== 6 && closedDatesISO.indexOf(tourIso) === -1) {
+                var tp = tourIso.split('-');
+                $('#t_start_date_field').val(tp[1] + '/' + tp[2] + '/' + tp[0]);
+            }
+        }
+
+        // Tour date must be selected
+        if (!$('#t_start_date_field').val()) {
+            ok = false;
+        }
+
+        // Block if duplicate detected
+        if (duplicateBlocked) {
+            ok = false;
+        }
+
+        if (!ok) {
+            e.preventDefault();
+            var $first = $('.field-error').filter(function () {
+                return this.textContent.trim() !== '';
+            }).first();
+            if ($first.length) {
+                $('html,body').animate({ scrollTop: $first.offset().top - 120 }, 300);
+            }
+        }
+    });
+
+    function showErr(id, msg) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = msg;
+    }
 });
 </script>
