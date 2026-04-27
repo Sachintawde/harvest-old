@@ -449,30 +449,33 @@ $(function () {
     });
 
     // ── Duplicate booking check (AJAX) ──────────────────────────────────────
-    var duplicateBlocked = false;
+    var duplicateBlocked      = false;  // set by real-time checks
+    var duplicateFinalChecked = false;  // set to true after submit-gate AJAX passes
     var $submitBtn = $('#Tour-form').find('button[type="submit"]');
+    var submitBtnOrigText = $submitBtn.text();
 
     function setDuplicateState(blocked, message) {
         duplicateBlocked = blocked;
         if (blocked) {
             showErr('err_duplicate', message || 'You have already booked a tour for this date.');
-            // Clear the date picker and hidden field so user must pick a different date
+            // Clear date so user must pick a different one
             $('#t_start_date_picker').val('');
             $('#t_start_date_field').val('');
             $submitBtn.prop('disabled', true).css('opacity', '0.55');
         } else {
             showErr('err_duplicate', '');
-            $submitBtn.prop('disabled', false).css('opacity', '');
+            $submitBtn.prop('disabled', false).css('opacity', '').text(submitBtnOrigText);
         }
     }
 
-    function checkDuplicate() {
+    function checkDuplicate(callback) {
         var dateIso = $('#t_start_date_picker').val();
         var phone   = $('#t_mother_phone').val().replace(/\D/g, '');
         var email   = $.trim($('#t_mother_email').val()).toLowerCase();
 
         if (!dateIso || (!phone && !email)) {
             setDuplicateState(false);
+            if (callback) callback(false);
             return;
         }
 
@@ -483,20 +486,23 @@ $(function () {
             dataType: 'json',
             success: function (res) {
                 setDuplicateState(res.duplicate, res.message);
+                if (callback) callback(res.duplicate);
             },
             error: function () {
-                // On network error, allow submission — server will re-check
+                // Network error: allow — server will re-check
                 setDuplicateState(false);
+                if (callback) callback(false);
             }
         });
     }
 
-    // Re-check when phone or email loses focus (date may already be selected)
-    $('#t_mother_phone').on('blur', checkDuplicate);
-    $('#t_mother_email').on('blur', checkDuplicate);
+    // Real-time feedback on blur (handles cases where date is already chosen)
+    $('#t_mother_phone').on('blur', function () { checkDuplicate(); });
+    $('#t_mother_email').on('blur', function () { checkDuplicate(); });
 
     // ── Form submit: client-side gate ────────────────────────────────────────
     $('#Tour-form').on('submit', function (e) {
+        var $form = $(this);
         var ok = true;
 
         // Sync tour date hidden field from picker if change event was missed
@@ -514,7 +520,7 @@ $(function () {
             ok = false;
         }
 
-        // Block if duplicate detected
+        // Already known to be blocked by a real-time check
         if (duplicateBlocked) {
             ok = false;
         }
@@ -527,7 +533,29 @@ $(function () {
             if ($first.length) {
                 $('html,body').animate({ scrollTop: $first.offset().top - 120 }, 300);
             }
+            return;
         }
+
+        // ── Final duplicate check at submit time (closes the race-condition window) ──
+        if (!duplicateFinalChecked) {
+            e.preventDefault();
+            $submitBtn.prop('disabled', true).text('Checking availability…').css('opacity', '0.75');
+
+            checkDuplicate(function (isDuplicate) {
+                if (isDuplicate) {
+                    // setDuplicateState already showed the error and cleared the date
+                    $submitBtn.prop('disabled', true).css('opacity', '0.55').text(submitBtnOrigText);
+                } else {
+                    // Clean — allow the real submit
+                    duplicateFinalChecked = true;
+                    $form.submit();
+                }
+            });
+            return;
+        }
+
+        // Reset flag so subsequent submissions (e.g. after error redirect) re-check
+        duplicateFinalChecked = false;
     });
 
     function showErr(id, msg) {
