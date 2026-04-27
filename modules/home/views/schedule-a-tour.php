@@ -127,7 +127,6 @@ if ($this->session->flashdata('error')) {
                 <div class="tour-field">
                     <label class="tour-form-label">Email <span class="imp">*</span></label>
                     <input type="email" name="t_mother_email" id="t_mother_email" class="tour-form-control" placeholder="email@example.com" value="<?= htmlspecialchars($fd['t_mother_email'] ?? '') ?>" required>
-                    <span class="field-error" id="err_duplicate"></span>
                 </div>
 
                 <!-- Phone -->
@@ -293,6 +292,7 @@ if ($this->session->flashdata('error')) {
                         <!-- Hidden field carries the mm/dd/yyyy value the server expects -->
                         <input type="hidden" name="t_start_date_field" id="t_start_date_field"
                                value="<?= htmlspecialchars($fd['t_start_date_field'] ?? '') ?>">
+                        <span class="field-error" id="err_duplicate"></span>
                     </div>
                     <div class="tour-field">
                         <label class="tour-form-label">Preferred Time <span class="imp">*</span></label>
@@ -450,15 +450,29 @@ $(function () {
 
     // ── Duplicate booking check (AJAX) ──────────────────────────────────────
     var duplicateBlocked = false;
+    var $submitBtn = $('#Tour-form').find('button[type="submit"]');
+
+    function setDuplicateState(blocked, message) {
+        duplicateBlocked = blocked;
+        if (blocked) {
+            showErr('err_duplicate', message || 'You have already booked a tour for this date.');
+            // Clear the date picker and hidden field so user must pick a different date
+            $('#t_start_date_picker').val('');
+            $('#t_start_date_field').val('');
+            $submitBtn.prop('disabled', true).css('opacity', '0.55');
+        } else {
+            showErr('err_duplicate', '');
+            $submitBtn.prop('disabled', false).css('opacity', '');
+        }
+    }
 
     function checkDuplicate() {
-        var dateIso  = $('#t_start_date_picker').val();
-        var phone    = $('#t_mother_phone').val().replace(/\D/g, '');
-        var email    = $.trim($('#t_mother_email').val()).toLowerCase();
+        var dateIso = $('#t_start_date_picker').val();
+        var phone   = $('#t_mother_phone').val().replace(/\D/g, '');
+        var email   = $.trim($('#t_mother_email').val()).toLowerCase();
 
         if (!dateIso || (!phone && !email)) {
-            showErr('err_duplicate', '');
-            duplicateBlocked = false;
+            setDuplicateState(false);
             return;
         }
 
@@ -468,21 +482,16 @@ $(function () {
             data: { date: dateIso, phone: phone, email: email },
             dataType: 'json',
             success: function (res) {
-                if (res.duplicate) {
-                    showErr('err_duplicate', res.message);
-                    duplicateBlocked = true;
-                } else {
-                    showErr('err_duplicate', '');
-                    duplicateBlocked = false;
-                }
+                setDuplicateState(res.duplicate, res.message);
             },
             error: function () {
                 // On network error, allow submission — server will re-check
-                duplicateBlocked = false;
+                setDuplicateState(false);
             }
         });
     }
 
+    // Re-check when phone or email loses focus (date may already be selected)
     $('#t_mother_phone').on('blur', checkDuplicate);
     $('#t_mother_email').on('blur', checkDuplicate);
 
