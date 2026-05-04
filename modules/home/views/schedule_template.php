@@ -126,8 +126,6 @@
             <div class="section-title">Additional Notes</div>
             <div class="note-box"><?php echo nl2br(htmlspecialchars($t_other_notes)); ?></div>
             <?php endif; ?>
-
-            <div class="ref">Tour ID: #<?php echo isset($tour_id) ? (int)$tour_id : 'N/A'; ?></div>
         </div>
 
         <div class="footer">
