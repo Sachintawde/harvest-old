@@ -36,7 +36,7 @@
 
         <!-- Tour Date/Time highlight -->
         <div class="highlight-box">
-            <p>&#128197; <strong>Tour Date:</strong> <?php echo isset($t_start_date_field) ? htmlspecialchars($t_start_date_field) : 'N/A'; ?></p>
+            <p>&#128197; <strong>Tour Date:</strong> <?php echo isset($t_start_date_field) ? date('m/d/Y', strtotime($t_start_date_field)) : 'N/A'; ?></p>
             <p>&#128336; <strong>Time Slot:</strong> <?php echo isset($t_time_slot) ? htmlspecialchars($t_time_slot) : 'N/A'; ?></p>
             <p>&#127979; <strong>Program:</strong> <?php echo isset($t_program) ? htmlspecialchars($t_program) : 'N/A'; ?></p>
         </div>
@@ -56,6 +56,8 @@
                     <div class="label">Email</div>
                     <div class="value"><?php echo isset($t_mother_email) ? htmlspecialchars($t_mother_email) : 'N/A'; ?></div>
                 </div>
+            </div>
+            <div class="row">
                 <div class="field">
                     <div class="label">Phone</div>
                     <div class="value"><?php echo isset($t_mother_phone) ? htmlspecialchars($t_mother_phone) : 'N/A'; ?></div>
@@ -83,11 +85,11 @@
             <div class="row">
                 <div class="field">
                     <div class="label">Date of Birth</div>
-                    <div class="value"><?php echo !empty($t_dob_1) ? htmlspecialchars($t_dob_1) : '—'; ?></div>
+                    <div class="value"><?php echo !empty($t_dob_1) ? date('m/d/Y', strtotime($t_dob_1)) : '—'; ?></div>
                 </div>
                 <div class="field">
                     <div class="label">Expected Start Date</div>
-                    <div class="value"><?php echo !empty($t_signature_date) ? htmlspecialchars($t_signature_date) : '—'; ?></div>
+                    <div class="value"><?php echo !empty($t_signature_date) ? date('m/d/Y', strtotime($t_signature_date)) : '—'; ?></div>
                 </div>
             </div>
 
@@ -110,7 +112,7 @@
             <div class="row">
                 <div class="field">
                     <div class="label">Date of Birth</div>
-                    <div class="value"><?php echo !empty($t_dob_2) ? htmlspecialchars($t_dob_2) : '—'; ?></div>
+                    <div class="value"><?php echo !empty($t_dob_2) ? date('m/d/Y', strtotime($t_dob_2)) : '—'; ?></div>
                 </div>
                 <?php if (!empty($t_class_2)): ?>
                 <div class="field">
